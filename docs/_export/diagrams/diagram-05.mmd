@@ -1,0 +1,44 @@
+flowchart LR
+    subgraph carecrm [CareCRM]
+        WH[Webhook Handlers]
+        SVC[Service Layer]
+        RELAY[ApiRelayUrlResolver]
+    end
+    subgraph telephony [Telephony]
+        Tata[Tata Smartflo]
+        MCube[MCube]
+    end
+    subgraph messaging [Messaging]
+        WABA[WABA Anohim OTP]
+        MCubeWA[MCube wpbox WhatsApp]
+        MSG91[MSG91 SMS OTP]
+        Expo[Expo Push]
+    end
+    subgraph payments [Payments]
+        EBZ[Easebuzz Pay]
+        EBC[Easebuzz EasyCollect]
+    end
+    subgraph ai_maps [AI and Maps]
+        Gemini[Google Gemini]
+        GMaps[Google Maps Places]
+        Nominat[Nominatim]
+    end
+    subgraph realtime [Realtime]
+        Zoom[Zoom Meetings]
+        Reverb[Laravel Reverb]
+    end
+    Tata -->|webhook dialplan| WH
+    MCube -->|webhook| WH
+    WH --> SVC
+    SVC --> RELAY
+    RELAY --> MCubeWA
+    SVC --> WABA
+    SVC --> MSG91
+    SVC --> EBZ
+    SVC --> EBC
+    SVC --> Gemini
+    SVC --> GMaps
+    SVC --> Nominat
+    SVC --> Expo
+    SVC --> Zoom
+    SVC --> Reverb

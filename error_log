@@ -1,0 +1,39 @@
+[28-Oct-2025 08:53:06 UTC] PHP Fatal error:  Uncaught ReflectionException: Class "config" does not exist in /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php:912
+Stack trace:
+#0 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(912): ReflectionClass->__construct()
+#1 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(795): Illuminate\Container\Container->build()
+#2 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(961): Illuminate\Container\Container->resolve()
+#3 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(731): Illuminate\Foundation\Application->resolve()
+#4 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(946): Illuminate\Container\Container->make()
+#5 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(1454): Illuminate\Foundation\Application->make()
+#6 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(560): Illuminate\Container\Container->offsetGet()
+#7 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(611): Illuminate\Log\LogManager->getDefaultDriver()
+#8 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(124): Illuminate\Log\LogManager->parseDriver()
+#9 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\LogManager->driver()
+#10 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#11 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#12 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(497): Illuminate\Foundation\Exceptions\Handler->report()
+#13 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(146): Illuminate\Foundation\Http\Kernel->reportException()
+#14 /home/crmcarelix/public_html/public/index.php(51): Illuminate\Foundation\Http\Kernel->handle()
+#15 /home/crmcarelix/public_html/server.php(22): require_once('/home/crmcareli...')
+#16 {main}
+
+Next Illuminate\Contracts\Container\BindingResolutionException: Target class [config] does not exist. in /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php:914
+Stack trace:
+#0 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(795): Illuminate\Container\Container->build()
+#1 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(961): Illuminate\Container\Container->resolve()
+#2 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(731): Illuminate\Foundation\Application->resolve()
+#3 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(946): Illuminate\Container\Container->make()
+#4 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php(1454): Illuminate\Foundation\Application->make()
+#5 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(560): Illuminate\Container\Container->offsetGet()
+#6 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(611): Illuminate\Log\LogManager->getDefaultDriver()
+#7 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(124): Illuminate\Log\LogManager->parseDriver()
+#8 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Log/LogManager.php(681): Illuminate\Log\LogManager->driver()
+#9 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(317): Illuminate\Log\LogManager->error()
+#10 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php(278): Illuminate\Foundation\Exceptions\Handler->reportThrowable()
+#11 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(497): Illuminate\Foundation\Exceptions\Handler->report()
+#12 /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(146): Illuminate\Foundation\Http\Kernel->reportException()
+#13 /home/crmcarelix/public_html/public/index.php(51): Illuminate\Foundation\Http\Kernel->handle()
+#14 /home/crmcarelix/public_html/server.php(22): require_once('/home/crmcareli...')
+#15 {main}
+  thrown in /home/crmcarelix/public_html/vendor/laravel/framework/src/Illuminate/Container/Container.php on line 914

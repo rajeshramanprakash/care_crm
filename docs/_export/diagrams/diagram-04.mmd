@@ -1,0 +1,14 @@
+erDiagram
+    users ||--o{ leads : executive
+    users ||--o{ operation_leads : executive
+    leads ||--o| operation_leads : lead_id
+    operation_leads ||--o{ operation_deployment_details : deployments
+    operation_leads ||--o{ payment_invoices : invoices
+    payment_invoices ||--o{ received_payments : payments
+    services ||--o{ location_services : pricing
+    locations ||--o{ location_services : pricing
+    vendors ||--o{ vendor_service_prices : overrides
+    doctor_requests ||--o{ consultation_website_bookings : bookings
+    b2b_users ||--o{ b2b_leads : submits
+    insurer_users ||--o{ corporate_users : owns
+    corporate_users ||--o{ corporate_employees : employs

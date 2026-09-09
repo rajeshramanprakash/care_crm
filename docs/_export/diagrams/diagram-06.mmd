@@ -1,0 +1,28 @@
+flowchart TB
+    subgraph domainA [Domain A: Provider Services]
+        A1[location_services pivot] --> A2[price_12hr / price_24hr / price_onetime]
+        A2 --> A3{Override?}
+        A3 -->|yes| A4[vendor_service_prices / job_request_service_prices]
+        A3 -->|no| A5[location defaults]
+        A4 --> A6[VendorServiceSync.resolvePrice]
+        A5 --> A6
+        A6 --> A7[Price change request → admin approve]
+    end
+
+    subgraph domainB [Domain B: Doctor Consultation]
+        B1[location_doctor_consultation_prices] --> B2[modes: online / home_visit / clinic_visit]
+        B2 --> B3{doctor_requests.consultation_pricing JSON?}
+        B3 -->|yes| B4[Doctor override]
+        B3 -->|no| B5[location website_price]
+        B4 --> B6[ConsultationLocationPricingService]
+        B5 --> B6
+        B6 --> B7[DoctorReferralCommissionService]
+    end
+
+    subgraph domainC [Domain C: Operation Lead Billing]
+        C1[closed_rate × work_days] --> C2[payment_plan string parsed]
+        C2 --> C3[getPaymentPlanDays]
+        C3 --> C4[PaymentInvoiceService]
+        C4 --> C5[invoices:generate daily 00:01 IST]
+        C4 --> C6[Easebuzz EasyCollect ad-hoc links]
+    end

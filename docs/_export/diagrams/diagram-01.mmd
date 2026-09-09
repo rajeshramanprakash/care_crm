@@ -1,0 +1,29 @@
+flowchart LR
+    subgraph intake [Lead Intake]
+        WebForm[Website Form]
+        IVR[Tata IVR Dialplan]
+        WhatsApp[WhatsApp MCube]
+        B2BPortal[B2B Partner Portal]
+    end
+    subgraph sales [Sales Pipeline]
+        Leads[leads table]
+        SalesExec[Sales / Manager]
+    end
+    subgraph ops [Operations]
+        OpLeads[operation_leads]
+        Deploy[Deployments]
+        Invoice[Payment Invoices]
+    end
+    subgraph fulfill [Fulfillment]
+        Vendor[Vendor Portal]
+        Freelancer[Freelancer Portal]
+        Customer[Customer Portal]
+    end
+    intake --> Leads
+    Leads -->|Convert| OpLeads
+    SalesExec --> Leads
+    OpLeads --> Deploy
+    Deploy --> Vendor
+    Deploy --> Freelancer
+    OpLeads --> Invoice
+    Customer --> OpLeads

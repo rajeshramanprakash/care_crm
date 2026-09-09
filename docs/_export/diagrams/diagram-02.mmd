@@ -1,0 +1,59 @@
+flowchart TB
+    subgraph J1 [Journey 1: Sales Lead Lifecycle]
+        J1A[Website Form / IVR / WhatsApp] --> J1B[Lead created]
+        J1B --> J1C[UserAssignment → Sales exec]
+        J1C --> J1D[Executive calls via Tata click-to-call]
+        J1D --> J1E[Status updates + AI remarks Gemini]
+        J1E --> J1F[Prospect rate set]
+        J1F --> J1G[Convert to Operation Lead]
+    end
+
+    subgraph J2 [Journey 2: Operation Lead Fulfillment]
+        J2A[Operation Lead created] --> J2B[Vendor/Freelancer assigned]
+        J2B --> J2C[Deployment details recorded]
+        J2C --> J2D[GPS location attendance]
+        J2D --> J2E[Absent adjustments]
+        J2E --> J2F[Payment invoices scheduled]
+        J2F --> J2G[Received payments UTR proof]
+    end
+
+    subgraph J3 [Journey 3: Doctor Consultation]
+        J3A[CareWeb public site] --> J3B[Doctor + slot selection]
+        J3B --> J3C[ConsultationLocationPricingService]
+        J3C --> J3D[Easebuzz checkout]
+        J3D --> J3E[Zoom meeting link]
+        J3E --> J3F[Operation Lead handoff]
+    end
+
+    subgraph J4 [Journey 4: B2B Partner]
+        J4A[B2B partner OTP login] --> J4B[Submit lead → b2b_leads]
+        J4B --> J4C[Bridge to CRM lead/operation_lead]
+        J4C --> J4D[B2B Corporate Chat with CRM staff]
+    end
+
+    subgraph J5 [Journey 5: Provider Onboarding]
+        J5A[Public registration form] --> J5B[MSG91 OTP]
+        J5B --> J5C[Admin approval]
+        J5C --> J5D[Service prices synced]
+        J5D --> J5E[Deployment assignment]
+    end
+
+    subgraph J6 [Journey 6: Customer Portal]
+        J6A[OTP login] --> J6B[View operation lead]
+        J6B --> J6C[Chat vendor/freelancer/doctor]
+        J6C --> J6D[Payments]
+    end
+
+    subgraph J7 [Journey 7: Missed Callback]
+        J7A[Inbound call missed] --> J7B[Tata webhook]
+        J7B --> J7C[MissedCallbackSequenceService]
+        J7C --> J7D[RunMissedCallbackAttemptJob]
+        J7D --> J7E[Scheduled retry click-to-call]
+    end
+
+    subgraph J8 [Journey 8: Manager Oversight]
+        J8A[Manager login] --> J8B[Team leads parent_id filter]
+        J8B --> J8C[Staff chats monitor]
+        J8C --> J8D[Break/duty logs]
+        J8D --> J8E[Subordinate user management]
+    end

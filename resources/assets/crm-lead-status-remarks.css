@@ -1,0 +1,390 @@
+/* Sales / Manager status remarks — read-only timeline (admin, operation) */
+.clsr-panel {
+    border: 1px solid #e8ecf1;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.clsr-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #fff8f0 0%, #f8fafc 100%);
+    border-bottom: 1px solid #e8ecf1;
+}
+
+.clsr-panel__title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.clsr-panel__title i {
+    color: #f7941d;
+    margin-right: 0.35rem;
+}
+
+.clsr-panel__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.clsr-pill {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.clsr-pill--count {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.clsr-panel__body {
+    padding: 1rem 1rem 0.5rem;
+}
+
+.clsr-panel__body--scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Compact sidebar (operation / admin operation lead view) */
+.clsr-sidebar-col {
+    position: sticky;
+    top: 0.5rem;
+}
+
+.clsr-panel--sidebar {
+    max-height: min(200px, 38vh);
+    display: flex;
+    flex-direction: column;
+}
+
+.clsr-panel--sidebar .clsr-panel__head {
+    padding: 0.45rem 0.6rem;
+    flex-shrink: 0;
+}
+
+.clsr-panel--sidebar .clsr-panel__title {
+    font-size: 0.72rem;
+    line-height: 1.25;
+}
+
+.clsr-panel--sidebar .clsr-panel__title i {
+    font-size: 0.7rem;
+}
+
+.clsr-panel--sidebar .clsr-panel__meta {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.clsr-panel--sidebar .clsr-pill {
+    font-size: 0.58rem;
+    padding: 0.12rem 0.4rem;
+}
+
+.clsr-panel--sidebar .clsr-panel__body--scroll {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    padding: 0.4rem 0.5rem 0.35rem;
+}
+
+.clsr-panel--sidebar .clsr-timeline-item {
+    padding-left: 1.1rem;
+    padding-bottom: 0.5rem;
+}
+
+.clsr-panel--sidebar .clsr-timeline-marker {
+    width: 0.55rem;
+    height: 0.55rem;
+    top: 0.45rem;
+    box-shadow: 0 0 0 2px #fff7ed;
+}
+
+.clsr-panel--sidebar .clsr-remark-card__head {
+    padding: 0.4rem 0.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+}
+
+.clsr-panel--sidebar .clsr-avatar {
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.55rem;
+}
+
+.clsr-panel--sidebar .clsr-name {
+    font-size: 0.7rem;
+}
+
+.clsr-panel--sidebar .clsr-date {
+    font-size: 0.65rem;
+}
+
+.clsr-panel--sidebar .clsr-status-chip {
+    font-size: 0.62rem;
+    padding: 0.15rem 0.4rem;
+    align-self: flex-start;
+}
+
+.clsr-panel--sidebar .clsr-remark-card__body {
+    padding: 0.45rem 0.5rem;
+}
+
+.clsr-panel--sidebar .clsr-remark-text {
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.clsr-panel--sidebar .clsr-remark-block {
+    padding: 0.35rem 0.45rem;
+}
+
+.clsr-panel--sidebar .clsr-remark-block__label {
+    font-size: 0.58rem;
+    margin-bottom: 0.2rem;
+}
+
+.clsr-panel--sidebar .clsr-remark-text--draft {
+    font-size: 0.7rem;
+}
+
+/* Admin lead detail — compact box on the side */
+.clsr-inline-wrap {
+    max-width: 300px;
+    margin-left: auto;
+}
+
+.clsr-panel--inline {
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.clsr-panel--inline .clsr-panel__body--scroll {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Edit modal — narrow column */
+.clsr-modal-sidebar {
+    max-width: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .clsr-sidebar-col {
+        position: static;
+        margin-top: 0.5rem;
+    }
+}
+
+.clsr-timeline {
+    position: relative;
+    padding-left: 0.25rem;
+}
+
+.clsr-timeline-item {
+    position: relative;
+    padding-left: 1.75rem;
+    padding-bottom: 1rem;
+    margin-bottom: 0;
+}
+
+.clsr-timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 0.4rem;
+    top: 1.35rem;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.clsr-timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #f7941d;
+    box-shadow: 0 0 0 3px #fff7ed;
+    z-index: 1;
+}
+
+.clsr-remark-card {
+    border: 1px solid #e8ecf1;
+    border-radius: 8px;
+    background: #fafbfc;
+    transition: box-shadow 0.15s ease;
+}
+
+.clsr-remark-card:hover {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.clsr-remark-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid #eef2f6;
+    background: #fff;
+    border-radius: 8px 8px 0 0;
+}
+
+.clsr-remark-card__who {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.clsr-avatar {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f7941d 0%, #e67e22 100%);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+}
+
+.clsr-who-text {
+    min-width: 0;
+}
+
+.clsr-name {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.clsr-date {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.3;
+}
+
+.clsr-status-chip {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #dbeafe;
+    text-transform: capitalize;
+}
+
+.clsr-remark-card__body {
+    padding: 0.75rem 0.85rem;
+}
+
+.clsr-remark-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #334155;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.clsr-remark-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.clsr-remark-block {
+    border-radius: 6px;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid transparent;
+}
+
+.clsr-remark-block--english {
+    background: #fff;
+    border-color: #e0f2fe;
+}
+
+.clsr-remark-block--draft {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.clsr-remark-block__label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+}
+
+.clsr-remark-block__label i {
+    margin-right: 0.25rem;
+    opacity: 0.85;
+}
+
+.clsr-remark-block--english .clsr-remark-block__label {
+    color: #0369a1;
+}
+
+.clsr-remark-text--draft {
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+
+.clsr-remark-card--admin-edit .clsr-remark-card__body {
+    padding-top: 0.5rem;
+}
+
+.clsr-remark-card--admin-edit textarea.admin-remark-edit {
+    font-size: 0.875rem;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+}
+
+.clsr-remark-card--admin-edit .save-lead-remark-btn {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 576px) {
+    .clsr-remark-card__head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .clsr-status-chip {
+        align-self: flex-start;
+    }
+}

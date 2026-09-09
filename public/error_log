@@ -1,0 +1,14 @@
+[25-Jul-2025 00:04:43 UTC] PHP Warning:  realpath(): open_basedir restriction in effect. File(/home/crmcarelix) is not within the allowed path(s): (/home/crmcarelix/public_html:/tmp:/proc) in /home/crmcarelix/public_html/public/test.php on line 260
+[25-Jul-2025 00:04:43 UTC] PHP Fatal error:  Uncaught ValueError: scandir(): Argument #1 ($directory) cannot be empty in /home/crmcarelix/public_html/public/test.php:30
+Stack trace:
+#0 /home/crmcarelix/public_html/public/test.php(30): scandir()
+#1 /home/crmcarelix/public_html/public/test.php(261): listDirectory()
+#2 {main}
+  thrown in /home/crmcarelix/public_html/public/test.php on line 30
+[25-Jul-2025 00:05:08 UTC] PHP Warning:  realpath(): open_basedir restriction in effect. File(/home/crmcarelix) is not within the allowed path(s): (/home/crmcarelix/public_html:/tmp:/proc) in /home/crmcarelix/public_html/public/test.php on line 260
+[25-Jul-2025 00:05:08 UTC] PHP Fatal error:  Uncaught ValueError: scandir(): Argument #1 ($directory) cannot be empty in /home/crmcarelix/public_html/public/test.php:30
+Stack trace:
+#0 /home/crmcarelix/public_html/public/test.php(30): scandir()
+#1 /home/crmcarelix/public_html/public/test.php(261): listDirectory()
+#2 {main}
+  thrown in /home/crmcarelix/public_html/public/test.php on line 30

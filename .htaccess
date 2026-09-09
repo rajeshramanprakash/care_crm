@@ -1,0 +1,41 @@
+ <IfModule mod_rewrite.c>
+<IfModule mod_negotiation.c>
+    Options -MultiViews
+</IfModule>
+
+RewriteEngine On
+
+# for redirect to https;
+RewriteCond %{SERVER_PORT} 80
+RewriteRule ^(.*)$ https://crm.carelixhealthcare.com/$1 [R,L]
+# for redirect to https;
+
+#   Header always set Access-Control-Allow-Origin "https://weddingbanquets.in"
+  Header always set Access-Control-Allow-Origin "*"
+   Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+   Header always set Access-Control-Max-Age "1000"
+   Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, bearer"
+
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ ^$1 [N]
+
+RewriteCond %{REQUEST_URI} (\.\w+$) [NC]
+RewriteRule ^(.*)$ public/$1
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ server.php
+</IfModule>
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php8_module>
+
+</IfModule>
+<IfModule lsapi_module>
+
+</IfModule>
+# END cPanel-generated php ini directives, do not edit

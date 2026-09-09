@@ -1,0 +1,1972 @@
+@extends('operation_manager.layouts.app')
+
+@php
+    $page_title = $lead->customer_name ?: 'N/A';
+    $page_title .= " | $lead->contact_no | View Lead | Operation CRM";
+    $current_date = date('Y-m-d');
+    $active_task_count = 0;
+    $elem_class_help = '';
+    $elem_text_help = '';
+    $elem_class = '';
+    $elem_text = '';
+    $auth_user = Auth::user();
+@endphp
+
+@section('header-css')
+    <link rel="stylesheet" href="{{ asset('plugins/select2/css/select2.min.css') }}">
+    <style>
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            color: black;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+        }
+
+        .disabled-option {
+            color: red;
+            font-weight: bold;
+        }
+
+        .bg-blue {
+            background-color: #F7941D;
+        }
+
+        /* Status Badge Styling */
+        .badge-success {
+            background-color: #28a745 !important;
+            color: black !important;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background-color: #dc3545 !important;
+            color: white !important;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-profile-pending {
+            background-color: #fd7e14 !important;
+            color: white !important;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+    </style>
+@endsection
+
+@section('title', $page_title)
+
+@section('main')
+<div class="content-wrapper pb-5" style="height: 55vh; overflow-y: auto;">
+    <section class="content">
+            <div id="view_lead_card_container" class="card text-sm">
+                <div class="card-header text-light bg-orange mt-2">
+                    <button class="btn btn-xs text-light px-2 m-1" data-bs-toggle="modal"
+                        data-bs-target="#manageRmMessageModal">
+                        <i class="fa fa-plus"></i> Add Remark
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="container-fluid">
+                        <div class="card mb-5">
+                            <div class="card-header text-light bg-orange" style="">
+                                <h3 class="card-title text-light">Lead Information</h3>
+                                <button class="btn p-0 text-light float-right edit-btn" title="Edit"
+                                    data-id="{{ $lead->id }}">
+                                    <i class="fa fa-edit" style="font-size: 15px;"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Date/Time: </span>
+                                        <span class="mx-1">{{ $lead->date_time }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Executive: </span>
+                                        <span class="mx-1">{{ $lead->executive_name }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Customer Name: </span>
+                                        <span class="mx-1">{{ $lead->customer_name }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Contact No.: </span>
+                                        <span class="mx-1">{{ $lead->contact_no }}</span>
+                                        <div class="phone_action_btns d-flex"
+                                            style="position: absolute; top: -2px; left: 12rem;">
+                                            <a href="#" class="d-flex">
+                                                <div> </div>&nbsp;&nbsp;&nbsp;<i class="fab fa-whatsapp"
+                                                    onclick="handle_whatsapp_msg({{ $lead->contact_no }})"
+                                                    style="font-size: 25px; color: green;"></i>
+                                            </a>
+                                            <a href="tel:{{ $lead->contact_no }}" class="text-primary text-bold mx-1"
+                                                style="font-size: 20px;">
+                                                <i class="fa fa-phone-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Address: </span>
+                                        <span class="mx-1">{{ $lead->address ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Location: </span>
+                                        <span class="mx-1">{{ $lead->location ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Query: </span>
+                                        <span class="mx-1">{{ $lead->query ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Status: </span>
+                                        <span class="mx-1">
+                                            <span
+                                                class="badge bg-{{ $lead->status == 'closed' ? 'success' : ($lead->status == 'follow up' ? 'warning' : 'info') }}">
+                                                {{ ucfirst($lead->status) }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Shift Type: </span>
+                                        <span class="mx-1">{{ $lead->shift_type ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Patient Name: </span>
+                                        <span class="mx-1">{{ $lead->patient_name ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Patient Gender: </span>
+                                        <span class="mx-1">{{ $lead->patient_gender ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Age: </span>
+                                        <span class="mx-1">{{ $lead->age ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Closed Rate: </span>
+                                        <span class="mx-1">₹{{ number_format($lead->closed_rate ?: 0, 2) }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Total Received: </span>
+                                        <span class="mx-1 text-success">₹{{ number_format($paymentDetails->sum('payment_received') - $paymentDetails->sum('refund_amount'), 2) }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Total Outstanding: </span>
+                                        @php
+                                            $totalOutstanding = $paymentDetails->sum('outstanding_payment');
+                                            $totalColor = $totalOutstanding > 0 ? 'text-success' : ($totalOutstanding < 0 ? 'text-danger' : 'text-dark');
+                                        @endphp
+                                        <span class="mx-1 {{ $totalColor }}">₹{{ number_format($totalOutstanding, 2) }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Vendor Closed Rate:
+                                        </span>
+                                        <span class="mx-1">{{ $lead->vendor_closed_rate ?: 'N/A' }}</span>
+                                    </div>
+                                    @if($lead->price_issue_remark)
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: #F7941D">Price Issue Remark: </span>
+                                        <span class="mx-1">{{ $lead->price_issue_remark }}</span>
+                                    </div>
+                                    @endif
+                                    @if($lead->inactive_remark)
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: #F7941D">Inactive Remark: </span>
+                                        <span class="mx-1">{{ $lead->inactive_remark }}</span>
+                                    </div>
+                                    @endif
+                                    @if($lead->last_call_status_display)
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: #F7941D">Last Call Status: </span>
+                                        <span class="mx-1">
+                                            <span class="badge badge-{{ $lead->last_call_status_display == 'answered' ? 'success' : ($lead->last_call_status_display == 'no answer' ? 'warning' : ($lead->last_call_status_display == 'busy' ? 'info' : ($lead->last_call_status_display == 'failed' ? 'danger' : ($lead->last_call_status_display == 'completed' ? 'primary' : 'secondary')))) }}">
+                                                {{ ucfirst($lead->last_call_status_display) }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="card mb-5">
+                            <div class="card-header text-light bg-orange" style="">
+                                <h3 class="card-title text-light">Payment Information</h3>
+                                <button class="btn p-0 text-light float-right edit-payment-btn" title="Edit Payment"
+                                    data-id="{{ $lead->id }}">
+                                    <i class="fa fa-edit" style="font-size: 15px;"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Payment Plan: </span>
+                                        <span class="mx-1">{{ $lead->payment_plan ?: 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Ongoing/Stopped:
+                                        </span>
+                                        <span class="mx-1">{{ $lead->ongoing_stopped ?: 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                @if($lead->ongoing_stopped === 'stopped' && $lead->stopped_remark)
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <span class="text-bold mx-1" style="color: var(--wb-wood)">Stopped Remark: </span>
+                                        <span class="mx-1">{{ $lead->stopped_remark }}</span>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="card mb-5">
+                            <div class="card-header text-light bg-orange" style="">
+                                <h3 class="card-title text-light">Payment Details</h3>
+                                <button class="btn p-0 text-light float-right" title="Add Payment Detail"
+                                    data-bs-toggle="modal" data-bs-target="#addPaymentDetailModal">
+                                    <i class="fa fa-plus" style="font-size: 15px;"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive" style="overflow-x: auto; max-width: 100%;">
+                                    <table class="table table-bordered table-striped table-hover" style="min-width: 1400px; font-size: 0.9rem;">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th style="min-width: 120px;">Amount Received</th>
+                                                <th style="min-width: 120px;">Refund Amount</th>
+                                                <th style="min-width: 120px;">Net Amount</th>
+                                                <th style="min-width: 100px;">UTR Number</th>
+                                                <th style="min-width: 120px;">Received Date</th>
+                                                <th style="min-width: 140px;">From Date & Time</th>
+                                                <th style="min-width: 140px;">To Date & Time</th>
+                                                <th style="min-width: 100px;">Screenshot</th>
+                                                <th style="min-width: 120px;">Outstanding Payment</th>
+                                                <th style="min-width: 150px;">Remark</th>
+                                                <th style="min-width: 120px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($paymentDetails as $payment)
+                                                @php
+                                                    $paymentReceived = floatval($payment->payment_received ?: 0);
+                                                    $refundAmount = floatval($payment->refund_amount ?: 0);
+                                                    $netAmount = $paymentReceived - $refundAmount;
+                                                @endphp
+                                                <tr>
+                                                    <td>₹{{ number_format($paymentReceived, 2) }}</td>
+                                                    <td>₹{{ number_format($refundAmount, 2) }}</td>
+                                                    <td><strong>₹{{ number_format($netAmount, 2) }}</strong></td>
+                                                    <td>{{ $payment->utr_number ?: 'N/A' }}</td>
+                                                    <td>{{ $payment->received_date ? date('d-M-Y H:i', strtotime($payment->received_date)) : 'N/A' }}</td>
+                                                    <td>{{ $payment->from_date_time ? date('d-M-Y H:i', strtotime($payment->from_date_time)) : 'N/A' }}</td>
+                                                    <td>{{ $payment->to_date_time ? date('d-M-Y H:i', strtotime($payment->to_date_time)) : 'N/A' }}</td>
+                                                    <td>
+                                                        @if ($payment->screenshot)
+                                                            <a href="{{ asset('storage/' . $payment->screenshot) }}"
+                                                                target="_blank" class="btn btn-sm btn-info">
+                                                                <i class="fa fa-image"></i> View
+                                                            </a>
+                                                        @else
+                                                            N/A
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @php
+                                                            $outstanding = $payment->outstanding_payment ?: 0;
+                                                            $color = $outstanding > 0 ? 'text-success' : ($outstanding < 0 ? 'text-danger' : 'text-dark');
+                                                        @endphp
+                                                        <strong class="{{ $color }}">₹{{ number_format($outstanding, 2) }}</strong>
+                                                    </td>
+                                                    <td>
+                                                        {{ $payment->remark ?: 'N/A' }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <button class="btn btn-sm btn-info"
+                                                                onclick="viewPaymentDetail({{ $payment->id }})"
+                                                                title="View Details">
+                                                                <i class="fa fa-eye"></i>
+                                                            </button>
+                                                        <button class="btn btn-sm btn-primary"
+                                                                onclick="editPaymentDetail({{ $payment->id }})"
+                                                                title="Edit">
+                                                                <i class="fa fa-edit"></i>
+                                                        </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="11" class="text-center">No payment details found</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-5">
+                            <div class="card-header text-light bg-orange" style="">
+                                <h3 class="card-title text-light">Deployment Details</h3>
+                                <button class="btn p-0 text-light float-right" title="Add Deployment Detail"
+                                    data-bs-toggle="modal" data-bs-target="#addDeploymentDetailModal">
+                                    <i class="fa fa-plus" style="font-size: 15px;"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive" style="overflow-x: auto; max-width: 100%;">
+                                    <table class="table table-bordered table-striped table-hover" style="min-width: 1200px; font-size: 0.9rem;">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th style="min-width: 120px;">Deployment Date</th>
+                                                <th style="min-width: 140px;">From Date & Time</th>
+                                                <th style="min-width: 140px;">To Date & Time</th>
+                                                <th style="min-width: 120px;">Deployment Status</th>
+                                                <th style="min-width: 100px;">Duty Hours</th>
+                                                <th style="min-width: 120px;">Vendor</th>
+                                                <th style="min-width: 120px;">Staff Name</th>
+                                                <th style="min-width: 120px;">Staff Number</th>
+                                                <th style="min-width: 120px;">Payment Term</th>
+                                                <th style="min-width: 120px;">Vendor Rate/Day</th>
+                                                <th style="min-width: 120px;">Vendor Payment</th>
+                                                <th style="min-width: 100px;">Verify Payment</th>
+                                                <th style="min-width: 150px;">Remark</th>
+                                                <th style="min-width: 120px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($deploymentDetails as $deployment)
+                                                <tr>
+                                                    <td>{{ $deployment->deployment_date ? date('d-M-Y H:i', strtotime($deployment->deployment_date)) : 'N/A' }}</td>
+                                                    <td>{{ $deployment->deployment_from_date ? date('d-M-Y H:i', strtotime($deployment->deployment_from_date)) : 'N/A' }}</td>
+                                                    <td>{{ $deployment->deployment_to_date ? date('d-M-Y H:i', strtotime($deployment->deployment_to_date)) : 'N/A' }}</td>
+                                                    <td>{{ $deployment->deployment_status ?: 'N/A' }}</td>
+                                                    <td>{{ $deployment->duty_hours ?: 'N/A' }}</td>
+                                                    <td>
+                                                        @if($deployment->freelance_staff_id && $deployment->freelanceStaff)
+                                                            {{ $deployment->freelanceStaff->name }} (Freelance)
+                                                        @elseif($deployment->vendor)
+                                                            {{ $deployment->vendor->name }}
+                                                        @else
+                                                            N/A
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $deployment->staff_name ?: 'N/A' }}</td>
+                                                    <td>{{ $deployment->staff_number ?: 'N/A' }}</td>
+                                                    <td>{{ $deployment->payment_term ?: 'N/A' }}</td>
+                                                    <td>₹{{ number_format($deployment->vendor_rate_per_day ?: 0, 2) }}</td>
+                                                    <td><strong>₹{{ number_format($deployment->vendor_payment ?: 0, 2) }}</strong></td>
+                                                    <td class="text-center">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input verify-payment-checkbox"
+                                                                   type="checkbox"
+                                                                   data-deployment-id="{{ $deployment->id }}"
+                                                                   {{ $deployment->verify_payment ? 'checked' : '' }}
+                                                                   onchange="toggleVerifyPayment({{ $deployment->id }}, this.checked)"
+                                                                   title="Verify Payment">
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ $deployment->remark ?: 'N/A' }}</td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <button class="btn btn-sm btn-info"
+                                                                onclick="viewDeploymentDetail({{ $deployment->id }})"
+                                                                title="View Details">
+                                                                <i class="fa fa-eye"></i>
+                                                            </button>
+                                                        <button class="btn btn-sm btn-primary"
+                                                                onclick="editDeploymentDetail({{ $deployment->id }})"
+                                                                title="Edit">
+                                                                <i class="fa fa-edit"></i>
+                                                        </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="14" class="text-center">No deployment details found</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (isset($crm_lead) && $crm_lead->recording_url)
+                        @php
+                            $recordings = is_array($crm_lead->recording_url)
+                                ? $crm_lead->recording_url
+                                : json_decode($crm_lead->recording_url, true);
+                        @endphp
+                        <div class="card mb-5">
+                            <div class="card-header text-light bg-orange">
+                                <h3 class="card-title text-light">Call Recordings (CRM Lead)</h3>
+                            </div>
+                            <div class="card-body">
+                                @if (is_array($recordings) && count($recordings) > 0)
+                                    @foreach ($recordings as $rec)
+                                        @php $meta = isset($rec['metadata']) ? json_decode($rec['metadata'], true) : []; @endphp
+                                        <div class="mb-3">
+                                            <audio controls style="vertical-align:middle;max-width:520px;width:500px;">
+                                                <source src="{{ $rec['url'] }}" type="audio/wav">
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                            <a href="{{ $rec['url'] }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary ms-2" title="Download">
+                                                <i class="fa fa-download"></i>
+                                            </a>
+                                            <span class="text-muted ms-2">
+                                                {{ isset($meta['datetime']) ? 'Date: ' . $meta['datetime'] : '' }}
+                                                {{ isset($meta['caller_agent']) ? ' | Agent: ' . $meta['caller_agent'] : '' }}
+                                                {{ isset($meta['dialstatus']) ? ' | Dial Status: ' . $meta['dialstatus'] : '' }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="text-muted">No call recordings found.</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Payment Detail Modal -->
+    <div class="modal fade" id="addPaymentDetailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add Payment Detail</h4>
+                    <button type="button" class="btn text-secondary" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form id="addPaymentDetailForm" enctype="multipart/form-data">
+                    <div class="modal-body text-sm">
+                        @csrf
+                        <div class="form-group mb-3">
+                            <label for="payment_received">Amount Received</label>
+                            <input type="number" step="0.01" class="form-control" id="payment_received" name="payment_received" onchange="calculateNetAmount()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="refund_amount">Refund Amount</label>
+                            <input type="number" step="0.01" class="form-control" id="refund_amount" name="refund_amount" value="0" onchange="calculateNetAmount()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="net_amount">Net Amount</label>
+                            <input type="number" step="0.01" class="form-control" id="net_amount" name="net_amount" readonly style="background-color: #f8f9fa;">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="utr_number">UTR Number</label>
+                            <input type="text" class="form-control" id="utr_number" name="utr_number" placeholder="Enter UTR number">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="received_date">Received Date</label>
+                            <input type="datetime-local" class="form-control" id="received_date" name="received_date">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="from_date_time">From Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="from_date_time" name="from_date_time" onchange="calculateOutstandingPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="to_date_time">To Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="to_date_time" name="to_date_time" onchange="calculateOutstandingPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="screenshot">Screenshot <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="screenshot" name="screenshot" required accept="image/*,application/pdf">
+                            <small class="text-muted">Please upload a screenshot of the payment transaction (required)</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="outstanding_payment">Outstanding Payment</label>
+                            <input type="number" step="0.01" class="form-control" id="outstanding_payment" name="outstanding_payment" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Automatically calculated based on Closed Rate and payments received</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="remark">Remark</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="Enter any additional remarks..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm bg-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm text-light" style="background-color: var(--wb-dark-red);">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Detail Modal -->
+    <div class="modal fade" id="editPaymentDetailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Edit Payment Detail</h4>
+                    <button type="button" class="btn text-secondary" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form id="editPaymentDetailForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body text-sm">
+                        @csrf
+                        @method('PUT')
+                        <div class="form-group mb-3">
+                            <label for="edit_payment_received">Amount Received</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_payment_received" name="payment_received" onchange="calculateEditNetAmount()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_refund_amount">Refund Amount</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_refund_amount" name="refund_amount" value="0" onchange="calculateEditNetAmount()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_net_amount">Net Amount</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_net_amount" name="net_amount" readonly style="background-color: #f8f9fa;">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_utr_number">UTR Number</label>
+                            <input type="text" class="form-control" id="edit_utr_number" name="utr_number" placeholder="Enter UTR number">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_received_date">Received Date</label>
+                            <input type="datetime-local" class="form-control" id="edit_received_date" name="received_date">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_from_date_time">From Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="edit_from_date_time" name="from_date_time" onchange="calculateEditOutstandingPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_to_date_time">To Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="edit_to_date_time" name="to_date_time" onchange="calculateEditOutstandingPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_screenshot">Screenshot</label>
+                            <input type="file" class="form-control" id="edit_screenshot" name="screenshot">
+                            <small class="text-muted">Leave empty to keep existing screenshot</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_outstanding_payment">Outstanding Payment</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_outstanding_payment" name="outstanding_payment" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Automatically calculated based on Closed Rate and payments received</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_remark">Remark</label>
+                            <textarea class="form-control" id="edit_remark" name="remark" rows="3" placeholder="Enter any additional remarks..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm bg-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm text-light" style="background-color: var(--wb-dark-red);">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editOperationLeadModal" tabindex="-1" aria-labelledby="editOperationLeadModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editOperationLeadModalLabel">Edit Operation Lead</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editOperationLeadForm" enctype="multipart/form-data">
+                        <input type="hidden" id="edit_lead_id" name="id">
+                        <div class="row" id="editOperationLeadFields">
+                            <!-- Fields will be loaded here -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="updateOperationLead">Update Lead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Information Modal -->
+    <div class="modal fade" id="editPaymentInfoModal" tabindex="-1" aria-labelledby="editPaymentInfoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPaymentInfoModalLabel">Edit Payment Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPaymentInfoForm">
+                        <input type="hidden" id="edit_payment_lead_id" name="id">
+                        <div class="mb-3">
+                            <label for="payment_plan" class="form-label">Payment Plan</label>
+                            <select class="form-control" id="payment_plan" name="payment_plan">
+                                <option value="">Select Payment Plan</option>
+                                <option value="3 Days">3 Days</option>
+                                <option value="1 Week">1 Week</option>
+                                <option value="15 Days">15 Days</option>
+                                <option value="1 Month">1 Month</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ongoing_stopped" class="form-label">Ongoing/Stopped</label>
+                            <select class="form-control" id="ongoing_stopped" name="ongoing_stopped" onchange="toggleStoppedRemark()">
+                                <option value="">Select Status</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="stopped">Stopped</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="stopped_remark_group">
+                            <label for="stopped_remark" class="form-label">Stopped Remark</label>
+                            <input type="text" class="form-control" id="stopped_remark" name="stopped_remark" placeholder="Enter remark for stopped status">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="updatePaymentBtn">Update Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Deployment Detail Modal -->
+    <div class="modal fade" id="addDeploymentDetailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Add Deployment Detail</h4>
+                    <button type="button" class="btn text-secondary" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form id="addDeploymentDetailForm" enctype="multipart/form-data">
+                    <div class="modal-body text-sm">
+                        @csrf
+                        <div class="form-group mb-3">
+                            <label for="deployment_date">Deployment Date</label>
+                            <input type="datetime-local" class="form-control" id="deployment_date" name="deployment_date">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="deployment_from_date">From Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="deployment_from_date" name="deployment_from_date" onchange="calculateVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="deployment_to_date">To Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="deployment_to_date" name="deployment_to_date" onchange="calculateVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="deployment_status">Deployment Status</label>
+                            <select class="form-control" id="deployment_status" name="deployment_status" required>
+                                <option value="">Select Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Stop">Stop</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="duty_hours">Duty Hours</label>
+                            <select class="form-control" id="duty_hours" name="duty_hours">
+                                <option value="">Select Duty Hours</option>
+                                <option value="12hr">12 Hours</option>
+                                <option value="24hr">24 Hours</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="vendor_id">Vendor / Freelance Staff</label>
+                            <select class="form-control" id="vendor_id" name="vendor_id">
+                                <option value="">Loading vendors...</option>
+                            </select>
+                            <small class="text-muted">Vendors and freelance staff are filtered based on lead location and service</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="staff_name">Staff Name</label>
+                            <input type="text" class="form-control" id="staff_name" name="staff_name">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="staff_number">Staff Number</label>
+                            <input type="text" class="form-control" id="staff_number" name="staff_number" placeholder="Enter staff contact number">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="payment_term">Payment Term</label>
+                            <select class="form-control" id="payment_term" name="payment_term">
+                                <option value="">Select Payment Term</option>
+                                <option value="15 day advance">15 Day Advance</option>
+                                <option value="1 week advance">1 Week Advance</option>
+                                <option value="per day advance">Per Day Advance</option>
+                                <option value="post 1 week">Post 1 Week</option>
+                                <option value="post 15 days">Post 15 Days</option>
+                                <option value="post one month">Post One Month</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="vendor_rate_per_day">Vendor Rate Per Day</label>
+                            <input type="number" step="0.01" class="form-control" id="vendor_rate_per_day" name="vendor_rate_per_day" onchange="calculateVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="vendor_payment">Vendor Payment</label>
+                            <input type="number" step="0.01" class="form-control" id="vendor_payment" name="vendor_payment" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Automatically calculated based on work days and rate per day</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="verify_payment" name="verify_payment" value="1">
+                                <label class="form-check-label" for="verify_payment">
+                                    Verify Payment
+                                </label>
+                            </div>
+                            <small class="text-muted">Check this to include this payment in vendor's total earned amount</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="remark">Remark</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="Enter any additional remarks..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm bg-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm text-light" style="background-color: var(--wb-dark-red);">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Deployment Detail Modal -->
+    <div class="modal fade" id="editDeploymentDetailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Edit Deployment Detail</h4>
+                    <button type="button" class="btn text-secondary" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form id="editDeploymentDetailForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body text-sm">
+                        @csrf
+                        @method('PUT')
+                        <div class="form-group mb-3">
+                            <label for="edit_deployment_date">Deployment Date</label>
+                            <input type="datetime-local" class="form-control" id="edit_deployment_date" name="deployment_date">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_deployment_from_date">From Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="edit_deployment_from_date" name="deployment_from_date" onchange="calculateEditVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_deployment_to_date">To Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="edit_deployment_to_date" name="deployment_to_date" onchange="calculateEditVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_deployment_status">Deployment Status</label>
+                            <select class="form-control" id="edit_deployment_status" name="deployment_status" required>
+                                <option value="">Select Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Stop">Stop</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_duty_hours">Duty Hours</label>
+                            <select class="form-control" id="edit_duty_hours" name="duty_hours">
+                                <option value="">Select Duty Hours</option>
+                                <option value="12hr">12 Hours</option>
+                                <option value="24hr">24 Hours</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_vendor_id">Vendor / Freelance Staff</label>
+                            <select class="form-control" id="edit_vendor_id" name="vendor_id">
+                                <option value="">Loading vendors...</option>
+                            </select>
+                            <small class="text-muted">Vendors and freelance staff are filtered based on lead location and service</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_staff_name">Staff Name</label>
+                            <input type="text" class="form-control" id="edit_staff_name" name="staff_name">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_staff_number">Staff Number</label>
+                            <input type="text" class="form-control" id="edit_staff_number" name="staff_number" placeholder="Enter staff contact number">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_payment_term">Payment Term</label>
+                            <select class="form-control" id="edit_payment_term" name="payment_term">
+                                <option value="">Select Payment Term</option>
+                                <option value="15 day advance">15 Day Advance</option>
+                                <option value="1 week advance">1 Week Advance</option>
+                                <option value="per day advance">Per Day Advance</option>
+                                <option value="post 1 week">Post 1 Week</option>
+                                <option value="post 15 days">Post 15 Days</option>
+                                <option value="post one month">Post One Month</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_vendor_rate_per_day">Vendor Rate Per Day</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_vendor_rate_per_day" name="vendor_rate_per_day" onchange="calculateEditVendorPayment()">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_vendor_payment">Vendor Payment</label>
+                            <input type="number" step="0.01" class="form-control" id="edit_vendor_payment" name="vendor_payment" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Automatically calculated based on work days and rate per day</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_verify_payment" name="verify_payment" value="1">
+                                <label class="form-check-label" for="edit_verify_payment">
+                                    Verify Payment
+                                </label>
+                            </div>
+                            <small class="text-muted">Check this to include this payment in vendor's total earned amount</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_remark">Remark</label>
+                            <textarea class="form-control" id="edit_remark" name="remark" rows="3" placeholder="Enter any additional remarks..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm bg-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm text-light" style="background-color: var(--wb-dark-red);">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Payment Detail Modal -->
+    <div class="modal fade" id="viewPaymentDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h4 class="modal-title">Payment Detail Information</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Amount Received:</label>
+                                <p class="text-success fs-5" id="view_payment_received">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Refund Amount:</label>
+                                <p class="text-danger fs-5" id="view_refund_amount">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Net Amount:</label>
+                                <p class="text-primary fs-5 fw-bold" id="view_net_amount">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">UTR Number:</label>
+                                <p id="view_utr_number">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Received Date:</label>
+                                <p id="view_received_date">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">From Date & Time:</label>
+                                <p id="view_from_date_time">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">To Date & Time:</label>
+                                <p id="view_to_date_time">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Outstanding Payment:</label>
+                                <p id="view_outstanding_payment">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="fw-bold">Remark:</label>
+                                <p id="view_remark">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Screenshot:</label>
+                                <div id="view_screenshot">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Deployment Detail Modal -->
+    <div class="modal fade" id="viewDeploymentDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h4 class="modal-title">Deployment Detail Information</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Deployment Date:</label>
+                                <p id="view_deployment_date">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">From Date & Time:</label>
+                                <p id="view_deployment_from_date">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">To Date & Time:</label>
+                                <p id="view_deployment_to_date">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Deployment Status:</label>
+                                <p id="view_deployment_status">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold">Duty Hours:</label>
+                                <p id="view_duty_hours">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Vendor:</label>
+                                <p id="view_vendor">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Staff Name:</label>
+                                <p id="view_staff_name">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Staff Number:</label>
+                                <p id="view_staff_number">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Payment Term:</label>
+                                <p id="view_payment_term">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Vendor Rate/Day:</label>
+                                <p id="view_vendor_rate_per_day">-</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold">Vendor Payment:</label>
+                                <p class="text-primary fs-5 fw-bold" id="view_vendor_payment">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="fw-bold">Remark:</label>
+                                <p id="view_deployment_remark">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@section('footer-script')
+    <script src="{{ asset('plugins/select2/js/select2.min.js') }}"></script>
+    <script>
+        // Edit Operation Lead
+        $(document).on('click', '.edit-btn', function() {
+            var leadId = $(this).data('id');
+            console.log('Editing lead ID:', leadId);
+
+            $.get('/operation-manager/operation-leads/' + leadId + '/edit', function(lead) {
+                console.log('Edit data received:', lead);
+
+                // Define all editable fields for lead information
+                const editableFields = [
+                    'date_time', 'executive', 'customer_name', 'contact_no', 'address', 'location',
+                    'query', 'query_remark', 'status', 'shift_type', 'price_issue_remark', 'inactive_remark', 'closed_remark', 'patient_name', 'age', 'closed_rate', 'vendor_closed_rate'
+                ];
+
+                let fields = '';
+                for (const [key, value] of Object.entries(lead)) {
+                    if (!editableFields.includes(key)) continue;
+
+                    if (key === 'status') {
+                        fields +=
+                            `<div class='col-md-6 mb-3'><label class='form-label'>Status</label><select class='form-control' name='status' required onchange="toggleStatusRemark()"><option value='profile' ${value==='profile'?'selected':''}>Profile</option><option value='profile pending' ${value==='profile pending'?'selected':''}>Profile Pending</option><option value='profile shared' ${value==='profile shared'?'selected':''}>Profile Shared</option><option value='closed' ${value==='closed'?'selected':''}>Closed</option><option value='follow up' ${value==='follow up'?'selected':''}>Follow Up</option><option value='inactive' ${value==='inactive'?'selected':''}>Inactive</option><option value='price issue' ${value==='price issue'?'selected':''}>Price Issue</option></select></div>`;
+                        // Always add separate remark fields after status field
+                        fields +=
+                            `<div class='col-md-6 mb-3 d-none' id='edit_price_issue_remark_group'><label class='form-label'>Price Issue Remark</label><input type='text' class='form-control' name='price_issue_remark' value='${lead.price_issue_remark || ''}' placeholder='Enter remark for price issue status'></div>`;
+                        fields +=
+                            `<div class='col-md-6 mb-3 d-none' id='edit_inactive_remark_group'><label class='form-label'>Inactive Remark</label><input type='text' class='form-control' name='inactive_remark' value='${lead.inactive_remark || ''}' placeholder='Enter remark for inactive status'></div>`;
+                        fields +=
+                            `<div class='col-md-6 mb-3 d-none' id='edit_closed_remark_group'><label class='form-label'>Closed Remark</label><input type='text' class='form-control' name='closed_remark' value='${lead.closed_remark || ''}' placeholder='Enter remark for closed status'></div>`;
+                    } else if (key === 'shift_type') {
+                        fields += `<div class='col-md-6 mb-3'><label class='form-label'>Shift Type</label><select class='form-control' name='shift_type'><option value=''>Select Shift Type</option><option value='12hr' ${value==='12hr'?'selected':''}>12hr</option><option value='24hr' ${value==='24hr'?'selected':''}>24hr</option><option value='both' ${value==='both'?'selected':''}>Both</option></select></div>`;
+                    } else if (key === 'price_issue_remark' || key === 'inactive_remark' || key === 'closed_remark' || key === 'query_remark') {
+                        // Skip these as they're handled above with status/query field
+                        continue;
+                    } else if (key === 'query') {
+                        let queryOptions = '<option value="">Select Query</option>';
+                        @foreach($services as $service)
+                            queryOptions += `<option value="{{ $service->name }}" ${value==='{{ $service->name }}'?'selected':''}>{{ $service->name }}</option>`;
+                        @endforeach
+                        fields += `<div class='col-md-6 mb-3'><label class='form-label'>Query</label><select class='form-control' name='query' required onchange="toggleQueryRemark()">${queryOptions}</select></div>`;
+                    } else if (key === 'query_remark') {
+                        fields += `<div class='col-md-6 mb-3 d-none' id='edit_query_remark_group'><label class='form-label'>Query Remark</label><input type='text' class='form-control' name='query_remark' value='${value || ''}' placeholder='Enter remark for selected query'></div>`;
+                    } else if (key === 'location') {
+                        let locationOptions = '<option value="">Select Location</option>';
+                        @foreach($locations as $location)
+                            locationOptions += `<option value="{{ $location->name }}" ${value==='{{ $location->name }}'?'selected':''}>{{ $location->name }}</option>`;
+                        @endforeach
+                        fields += `<div class='col-md-6 mb-3'><label class='form-label'>Location</label><select class='form-control' name='location' required>${locationOptions}</select></div>`;
+                    } else if (key === 'date_time') {
+                        fields +=
+                            `<div class='col-md-6 mb-3'><label class='form-label'>Date/Time</label><input type='datetime-local' class='form-control' name='date_time' value='${value ? value.slice(0, 16) : ''}' required></div>`;
+                    } else if (key === 'age') {
+                        fields +=
+                            `<div class='col-md-6 mb-3'><label class='form-label'>Age</label><input type='number' class='form-control' name='age' value='${value ?? ''}'></div>`;
+                    } else if (key === 'closed_rate' || key === 'vendor_closed_rate') {
+                        fields +=
+                            `<div class='col-md-6 mb-3'><label class='form-label'>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label><input type='number' step='0.01' class='form-control' name='${key}' value='${value ?? ''}'></div>`;
+                    } else {
+                        fields +=
+                            `<div class='col-md-6 mb-3'><label class='form-label'>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label><input type='text' class='form-control' name='${key}' value='${value ?? ''}'></div>`;
+                    }
+                }
+
+                $('#edit_lead_id').val(lead.id);
+                $('#editOperationLeadFields').html(fields);
+
+                // Show/hide status remark field based on current status
+                toggleEditStatusRemark();
+                toggleQueryRemark();
+
+                var modal = new bootstrap.Modal(document.getElementById('editOperationLeadModal'));
+                modal.show();
+            }).fail(function(xhr, status, error) {
+                console.error('Edit error:', xhr.responseText);
+                alert('Error loading lead for editing: ' + xhr.responseText);
+            });
+        });
+
+        // Update Operation Lead
+        $('#updateOperationLead').on('click', function() {
+            var leadId = $('#edit_lead_id').val();
+            var form = $('#editOperationLeadForm')[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '/operation-manager/operation-leads/' + leadId,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-HTTP-Method-Override': 'PUT'
+                },
+                success: function(response) {
+                    alert(response.message);
+                    $('#editOperationLeadModal').modal('hide');
+                    window.location.reload();
+                },
+                error: function(xhr) {
+                    alert('Error: ' + (xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON
+                        .message : 'Could not update lead.'));
+                }
+            });
+        });
+
+        function editPaymentDetail(id) {
+            // Fetch payment detail data
+            fetch(`/operation-manager/operation-leads/payment/${id}/edit`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const payment = data.payment;
+
+                        // Set form action
+                        document.getElementById('editPaymentDetailForm').action = `/operation-manager/operation-leads/payment/${id}`;
+
+                        // Set form values
+                        document.getElementById('edit_payment_received').value = payment.payment_received || '';
+                        document.getElementById('edit_refund_amount').value = payment.refund_amount || '0';
+                        document.getElementById('edit_utr_number').value = payment.utr_number || '';
+                        document.getElementById('edit_received_date').value = payment.received_date ? payment.received_date.slice(0, 16) : '';
+                        document.getElementById('edit_from_date_time').value = payment.from_date_time ? payment.from_date_time.slice(0, 16) : '';
+                        document.getElementById('edit_to_date_time').value = payment.to_date_time ? payment.to_date_time.slice(0, 16) : '';
+                        document.getElementById('edit_outstanding_payment').value = payment.outstanding_payment || '';
+                        document.getElementById('edit_remark').value = payment.remark || '';
+
+                        // Calculate net amount after populating fields
+                        calculateEditNetAmount();
+
+                        // Show modal
+                        new bootstrap.Modal(document.getElementById('editPaymentDetailModal')).show();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading payment detail');
+                });
+        }
+
+        // Edit Vendor Info
+        $('.edit-vendor-btn').on('click', function() {
+            var leadId = $(this).data('id');
+            $.get('/operation-manager/operation-leads/' + leadId + '/edit', function(lead) {
+                $('#edit_vendor_lead_id').val(lead.id);
+                $('#vendor_name').val(lead.vendor_name || '');
+                $('#staff_name').val(lead.staff_name || '');
+                $('#vendor_closed_rate').val(lead.vendor_closed_rate || '');
+                $('#editVendorModal').modal('show');
+            });
+        });
+
+        $('#updateVendorBtn').on('click', function() {
+            var leadId = $('#edit_vendor_lead_id').val();
+            var data = {
+                vendor_name: $('#vendor_name').val(),
+                staff_name: $('#staff_name').val(),
+                vendor_closed_rate: $('#vendor_closed_rate').val(),
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'PUT'
+            };
+            $.ajax({
+                url: '/operation-manager/operation-leads/' + leadId,
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    alert(response.message);
+                    $('#editVendorModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    alert('Error updating vendor info');
+                }
+            });
+        });
+
+        // Edit Payment Info
+        $('.edit-payment-btn').on('click', function() {
+            var leadId = $(this).data('id');
+            $.ajax({
+                url: '/operation-manager/operation-leads/' + leadId + '/edit',
+                type: 'GET',
+                success: function(response) {
+                    $('#edit_payment_lead_id').val(leadId);
+                    $('#payment_plan').val(response.payment_plan || '');
+                    $('#ongoing_stopped').val(response.ongoing_stopped || '');
+                    $('#stopped_remark').val(response.stopped_remark || '');
+                    $('#editPaymentInfoModal').modal('show');
+                    
+                    // Show/hide stopped remark field based on current status
+                    setTimeout(function() {
+                        toggleStoppedRemark();
+                    }, 100);
+                },
+                error: function(xhr) {
+                    toastr.error('Error loading payment information');
+                }
+            });
+        });
+
+        $('#updatePaymentBtn').on('click', function() {
+            var leadId = $('#edit_payment_lead_id').val();
+            var data = {
+                payment_plan: $('#payment_plan').val(),
+                ongoing_stopped: $('#ongoing_stopped').val(),
+                stopped_remark: $('#stopped_remark').val(),
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'PUT'
+            };
+
+            $.ajax({
+                url: '/operation-manager/operation-leads/' + leadId,
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    toastr.success('Payment information updated successfully');
+                    $('#editPaymentInfoModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    toastr.error('Error updating payment information');
+                }
+            });
+        });
+
+        // Add Payment Detail Form Submission
+        $('#addPaymentDetailForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Check if screenshot is uploaded
+            const screenshotInput = document.getElementById('screenshot');
+            if (!screenshotInput.files || screenshotInput.files.length === 0) {
+                alert('Please upload a payment screenshot. This is required for verification.');
+                screenshotInput.focus();
+                return false;
+            }
+            
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: "{{ route('operation-manager.operation_leads.payment.store', $lead->id) }}",
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    toastr.success('Payment detail added successfully');
+                    $('#addPaymentDetailModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                        alert('Validation Error: ' + xhr.responseJSON.message);
+                    } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errorMsg = 'Validation Errors:\n';
+                        Object.keys(xhr.responseJSON.errors).forEach(function(key) {
+                            errorMsg += '- ' + xhr.responseJSON.errors[key][0] + '\n';
+                        });
+                        alert(errorMsg);
+                    } else {
+                        alert('Error adding payment detail');
+                    }
+                }
+            });
+        });
+
+        // Edit Payment Detail Form Submission
+        $('#editPaymentDetailForm').on('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+            formData.append('_method', 'PUT');
+
+            console.log('Submitting form to:', $(this).attr('action'));
+            console.log('Form data:', Object.fromEntries(formData));
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('Success response:', response);
+                    $('#editPaymentDetailModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error details:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
+
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                        alert('Validation Error: ' + xhr.responseJSON.message);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        alert('Error: ' + xhr.responseJSON.message);
+                    } else {
+                        alert('Error updating payment detail. Status: ' + xhr.status);
+                    }
+                }
+            });
+        });
+
+        // Deployment Details Form Handling
+        document.getElementById('addDeploymentDetailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('operation_lead_id', '{{ $lead->id }}');
+
+            console.log('Submitting add deployment form to:', '{{ route("operation-manager.operation_leads.deployment.store", $lead->id) }}');
+            console.log('Form data:', Object.fromEntries(formData));
+
+            fetch('{{ route("operation-manager.operation_leads.deployment.store", $lead->id) }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    toastr.success(data.message);
+                    $('#addDeploymentDetailModal').modal('hide');
+                    location.reload();
+                } else {
+                    toastr.error(data.message || 'Failed to add deployment detail');
+                }
+            })
+            .catch(error => {
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                toastr.error('An error occurred while adding deployment detail: ' + error.message);
+            });
+        });
+
+        function editDeploymentDetail(id) {
+            console.log('Fetching deployment detail for ID:', id);
+            fetch(`{{ url('operation-manager/operation-leads/deployment') }}/${id}/edit`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Deployment data received:', data);
+                    if (data.success) {
+                        const deployment = data.deployment;
+                        const form = document.getElementById('editDeploymentDetailForm');
+                        form.action = `{{ url('operation-manager/operation-leads/deployment') }}/${id}`;
+
+                        // Format dates for datetime-local input with null checks
+                        let formattedDeploymentDate = '';
+                        let formattedFromDate = '';
+                        let formattedToDate = '';
+
+                        if (deployment.deployment_date) {
+                            try {
+                        const deploymentDate = new Date(deployment.deployment_date);
+                                if (!isNaN(deploymentDate.getTime())) {
+                                    formattedDeploymentDate = deploymentDate.toISOString().slice(0, 16);
+                                }
+                            } catch (e) {
+                                console.log('Invalid deployment_date:', deployment.deployment_date);
+                            }
+                        }
+
+                        if (deployment.deployment_from_date) {
+                            try {
+                                const fromDate = new Date(deployment.deployment_from_date);
+                                if (!isNaN(fromDate.getTime())) {
+                                    formattedFromDate = fromDate.toISOString().slice(0, 16);
+                                }
+                            } catch (e) {
+                                console.log('Invalid deployment_from_date:', deployment.deployment_from_date);
+                            }
+                        }
+
+                        if (deployment.deployment_to_date) {
+                            try {
+                                const toDate = new Date(deployment.deployment_to_date);
+                                if (!isNaN(toDate.getTime())) {
+                                    formattedToDate = toDate.toISOString().slice(0, 16);
+                                }
+                            } catch (e) {
+                                console.log('Invalid deployment_to_date:', deployment.deployment_to_date);
+                            }
+                        }
+
+                        document.getElementById('edit_deployment_date').value = formattedDeploymentDate;
+                        document.getElementById('edit_deployment_from_date').value = formattedFromDate;
+                        document.getElementById('edit_deployment_to_date').value = formattedToDate;
+                        document.getElementById('edit_deployment_status').value = deployment.deployment_status || '';
+                        document.getElementById('edit_duty_hours').value = deployment.duty_hours || '';
+                        document.getElementById('edit_vendor_id').value = deployment.vendor_id || '';
+                        document.getElementById('edit_staff_name').value = deployment.staff_name || '';
+                        document.getElementById('edit_staff_number').value = deployment.staff_number || '';
+                        document.getElementById('edit_payment_term').value = deployment.payment_term || '';
+                        document.getElementById('edit_vendor_rate_per_day').value = deployment.vendor_rate_per_day || '';
+                        document.getElementById('edit_remark').value = deployment.remark || '';
+
+                        // Set verify payment checkbox
+                        document.getElementById('edit_verify_payment').checked = deployment.verify_payment || false;
+
+                        // Calculate vendor payment after populating fields
+                        calculateEditVendorPayment();
+
+                        $('#editDeploymentDetailModal').modal('show');
+                    } else {
+                        toastr.error(data.message || 'Failed to load deployment detail');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    toastr.error('An error occurred while fetching deployment detail');
+                });
+        }
+
+        document.getElementById('editDeploymentDetailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const url = this.action;
+
+            console.log('Submitting deployment form to:', url);
+            console.log('Form data:', Object.fromEntries(formData));
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    toastr.success(data.message);
+                    $('#editDeploymentDetailModal').modal('hide');
+                    location.reload();
+                } else {
+                    toastr.error(data.message || 'Failed to update deployment detail');
+                }
+            })
+            .catch(error => {
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                toastr.error('An error occurred while updating deployment detail: ' + error.message);
+            });
+        });
+
+        // Date validation for Payment Details
+        document.getElementById('from_date_time').addEventListener('change', function() {
+            const fromDate = this.value;
+            const toDateInput = document.getElementById('to_date_time');
+            if (fromDate && toDateInput.value && fromDate >= toDateInput.value) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        document.getElementById('to_date_time').addEventListener('change', function() {
+            const toDate = this.value;
+            const fromDateInput = document.getElementById('from_date_time');
+            if (toDate && fromDateInput.value && fromDateInput.value >= toDate) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        // Date validation for Edit Payment Details
+        document.getElementById('edit_from_date_time').addEventListener('change', function() {
+            const fromDate = this.value;
+            const toDateInput = document.getElementById('edit_to_date_time');
+            if (fromDate && toDateInput.value && fromDate >= toDateInput.value) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        document.getElementById('edit_to_date_time').addEventListener('change', function() {
+            const toDate = this.value;
+            const fromDateInput = document.getElementById('edit_from_date_time');
+            if (toDate && fromDateInput.value && fromDateInput.value >= toDate) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        // Date validation for Deployment Details
+        document.getElementById('deployment_from_date').addEventListener('change', function() {
+            const fromDate = this.value;
+            const toDateInput = document.getElementById('deployment_to_date');
+            if (fromDate && toDateInput.value && fromDate >= toDateInput.value) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        document.getElementById('deployment_to_date').addEventListener('change', function() {
+            const toDate = this.value;
+            const fromDateInput = document.getElementById('deployment_from_date');
+            if (toDate && fromDateInput.value && fromDateInput.value >= toDate) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        // Date validation for Edit Deployment Details
+        document.getElementById('edit_deployment_from_date').addEventListener('change', function() {
+            const fromDate = this.value;
+            const toDateInput = document.getElementById('edit_deployment_to_date');
+            if (fromDate && toDateInput.value && fromDate >= toDateInput.value) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        document.getElementById('edit_deployment_to_date').addEventListener('change', function() {
+            const toDate = this.value;
+            const fromDateInput = document.getElementById('edit_deployment_from_date');
+            if (toDate && fromDateInput.value && fromDateInput.value >= toDate) {
+                alert('To Date & Time must be after From Date & Time');
+                this.value = '';
+            }
+        });
+
+        // Calculate net amount for Add Payment form
+        function calculateNetAmount() {
+            const paymentReceived = parseFloat(document.getElementById('payment_received').value) || 0;
+            const refundAmount = parseFloat(document.getElementById('refund_amount').value) || 0;
+            const netAmount = paymentReceived - refundAmount;
+
+            document.getElementById('net_amount').value = netAmount.toFixed(2);
+
+            // Calculate outstanding payment
+            calculateOutstandingPayment();
+        }
+
+        // Calculate outstanding payment for Add Payment form
+        function calculateOutstandingPayment() {
+            const closedRate = parseFloat('{{ $lead->closed_rate ?: 0 }}') || 0; // This is now per day rate
+            const fromDate = document.getElementById('from_date_time').value;
+            const toDate = document.getElementById('to_date_time').value;
+            const netAmount = parseFloat(document.getElementById('net_amount').value) || 0;
+
+            console.log('Debug - calculateOutstandingPayment:', {
+                closedRate: closedRate,
+                fromDate: fromDate,
+                toDate: toDate,
+                netAmount: netAmount
+            });
+
+            if (fromDate && toDate && netAmount > 0) {
+                const startDate = new Date(fromDate);
+                const endDate = new Date(toDate);
+
+                // Calculate work days (inclusive of both start and end dates)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const workDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 for inclusive
+
+                // Calculate total expected amount for this payment period
+                const totalExpectedAmount = workDays * closedRate;
+
+                // Calculate outstanding payment for this specific payment detail
+                const outstandingAmount = netAmount - totalExpectedAmount;
+
+                console.log('Debug - Calculation details:', {
+                    startDate: startDate,
+                    endDate: endDate,
+                    timeDiff: timeDiff,
+                    workDays: workDays,
+                    totalExpectedAmount: totalExpectedAmount,
+                    netAmount: netAmount,
+                    outstandingAmount: outstandingAmount
+                });
+
+                document.getElementById('outstanding_payment').value = outstandingAmount.toFixed(2);
+            } else {
+                document.getElementById('outstanding_payment').value = '0.00';
+            }
+        }
+
+        // Calculate net amount for Edit Payment form
+        function calculateEditNetAmount() {
+            const paymentReceived = parseFloat(document.getElementById('edit_payment_received').value) || 0;
+            const refundAmount = parseFloat(document.getElementById('edit_refund_amount').value) || 0;
+            const netAmount = paymentReceived - refundAmount;
+
+            document.getElementById('edit_net_amount').value = netAmount.toFixed(2);
+
+            // Calculate outstanding payment for edit form
+            calculateEditOutstandingPayment();
+        }
+
+        // Calculate outstanding payment for Edit Payment form
+        function calculateEditOutstandingPayment() {
+            const closedRate = parseFloat('{{ $lead->closed_rate ?: 0 }}') || 0; // This is now per day rate
+            const fromDate = document.getElementById('edit_from_date_time').value;
+            const toDate = document.getElementById('edit_to_date_time').value;
+            const netAmount = parseFloat(document.getElementById('edit_net_amount').value) || 0;
+
+            if (fromDate && toDate && netAmount > 0) {
+                const startDate = new Date(fromDate);
+                const endDate = new Date(toDate);
+
+                // Calculate work days (inclusive of both start and end dates)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const workDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 for inclusive
+
+                // Calculate total expected amount for this payment period
+                const totalExpectedAmount = workDays * closedRate;
+
+                // Calculate outstanding payment for this specific payment detail
+                const outstandingAmount = netAmount - totalExpectedAmount;
+
+                document.getElementById('edit_outstanding_payment').value = outstandingAmount.toFixed(2);
+            } else {
+                document.getElementById('edit_outstanding_payment').value = '0.00';
+            }
+        }
+
+        // Initialize net amount calculation when modals open
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add Payment Modal
+            const addPaymentModal = document.getElementById('addPaymentDetailModal');
+            if (addPaymentModal) {
+                addPaymentModal.addEventListener('shown.bs.modal', function() {
+                    calculateNetAmount();
+                });
+            }
+
+            // Edit Payment Modal
+            const editPaymentModal = document.getElementById('editPaymentDetailModal');
+            if (editPaymentModal) {
+                editPaymentModal.addEventListener('shown.bs.modal', function() {
+                    calculateEditNetAmount();
+                });
+            }
+
+            // Add Deployment Modal
+            const addDeploymentModal = document.getElementById('addDeploymentDetailModal');
+            if (addDeploymentModal) {
+                addDeploymentModal.addEventListener('shown.bs.modal', function() {
+                    calculateVendorPayment();
+                });
+            }
+
+            // Edit Deployment Modal
+            const editDeploymentModal = document.getElementById('editDeploymentDetailModal');
+            if (editDeploymentModal) {
+                editDeploymentModal.addEventListener('shown.bs.modal', function() {
+                    calculateEditVendorPayment();
+                });
+            }
+
+            // Add event listeners for outstanding payment calculation
+            document.getElementById('payment_received').addEventListener('input', calculateOutstandingPayment);
+            document.getElementById('refund_amount').addEventListener('input', calculateOutstandingPayment);
+            document.getElementById('from_date_time').addEventListener('change', calculateOutstandingPayment);
+            document.getElementById('to_date_time').addEventListener('change', calculateOutstandingPayment);
+            document.getElementById('edit_payment_received').addEventListener('input', calculateEditOutstandingPayment);
+            document.getElementById('edit_refund_amount').addEventListener('input', calculateEditOutstandingPayment);
+            document.getElementById('edit_from_date_time').addEventListener('change', calculateEditOutstandingPayment);
+            document.getElementById('edit_to_date_time').addEventListener('change', calculateEditOutstandingPayment);
+
+            // Add event listeners for vendor payment calculation
+            document.getElementById('deployment_from_date').addEventListener('change', calculateVendorPayment);
+            document.getElementById('deployment_to_date').addEventListener('change', calculateVendorPayment);
+            document.getElementById('vendor_rate_per_day').addEventListener('input', calculateVendorPayment);
+            document.getElementById('edit_deployment_from_date').addEventListener('change', calculateEditVendorPayment);
+            document.getElementById('edit_deployment_to_date').addEventListener('change', calculateEditVendorPayment);
+            document.getElementById('edit_vendor_rate_per_day').addEventListener('input', calculateEditVendorPayment);
+        });
+
+        // Calculate vendor payment for Add Deployment form
+        function calculateVendorPayment() {
+            const fromDate = document.getElementById('deployment_from_date').value;
+            const toDate = document.getElementById('deployment_to_date').value;
+            const ratePerDay = parseFloat(document.getElementById('vendor_rate_per_day').value) || 0;
+
+            if (fromDate && toDate && ratePerDay > 0) {
+                const startDate = new Date(fromDate);
+                const endDate = new Date(toDate);
+
+                // Calculate work days (inclusive of both start and end dates)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 for inclusive
+
+                const vendorPayment = daysDiff * ratePerDay;
+                document.getElementById('vendor_payment').value = vendorPayment.toFixed(2);
+            } else {
+                document.getElementById('vendor_payment').value = '0.00';
+            }
+        }
+
+        // Calculate vendor payment for Edit Deployment form
+        function calculateEditVendorPayment() {
+            const fromDate = document.getElementById('edit_deployment_from_date').value;
+            const toDate = document.getElementById('edit_deployment_to_date').value;
+            const ratePerDay = parseFloat(document.getElementById('edit_vendor_rate_per_day').value) || 0;
+
+            if (fromDate && toDate && ratePerDay > 0) {
+                const startDate = new Date(fromDate);
+                const endDate = new Date(toDate);
+
+                // Calculate work days (inclusive of both start and end dates)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 for inclusive
+
+                const vendorPayment = daysDiff * ratePerDay;
+                document.getElementById('edit_vendor_payment').value = vendorPayment.toFixed(2);
+            } else {
+                document.getElementById('edit_vendor_payment').value = '0.00';
+            }
+        }
+
+        // View Payment Detail Function
+        function viewPaymentDetail(id) {
+            fetch(`/operation-manager/operation-leads/payment/${id}/edit`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const payment = data.payment;
+
+                        // Calculate net amount
+                        const paymentReceived = parseFloat(payment.payment_received) || 0;
+                        const refundAmount = parseFloat(payment.refund_amount) || 0;
+                        const netAmount = paymentReceived - refundAmount;
+
+                        // Populate view modal
+                        document.getElementById('view_payment_received').textContent = `₹${paymentReceived.toFixed(2)}`;
+                        document.getElementById('view_refund_amount').textContent = `₹${refundAmount.toFixed(2)}`;
+                        document.getElementById('view_net_amount').textContent = `₹${netAmount.toFixed(2)}`;
+                        document.getElementById('view_utr_number').textContent = payment.utr_number || 'N/A';
+                        document.getElementById('view_received_date').textContent = payment.received_date ? new Date(payment.received_date).toLocaleString('en-IN') : 'N/A';
+                        document.getElementById('view_from_date_time').textContent = payment.from_date_time ? new Date(payment.from_date_time).toLocaleString('en-IN') : 'N/A';
+                        document.getElementById('view_to_date_time').textContent = payment.to_date_time ? new Date(payment.to_date_time).toLocaleString('en-IN') : 'N/A';
+                        const outstanding = payment.outstanding_payment ? parseFloat(payment.outstanding_payment) : 0;
+                        const outstandingColor = outstanding > 0 ? 'text-success' : (outstanding < 0 ? 'text-danger' : 'text-dark');
+                        document.getElementById('view_outstanding_payment').textContent = `₹${outstanding.toFixed(2)}`;
+                        document.getElementById('view_outstanding_payment').className = outstandingColor;
+                        document.getElementById('view_remark').textContent = payment.remark || 'N/A';
+
+                        // Handle screenshot
+                        const screenshotDiv = document.getElementById('view_screenshot');
+                        if (payment.screenshot) {
+                            screenshotDiv.innerHTML = `<a href="/storage/${payment.screenshot}" target="_blank" class="btn btn-sm btn-info"><i class="fa fa-image"></i> View Screenshot</a>`;
+                        } else {
+                            screenshotDiv.textContent = 'N/A';
+                        }
+
+                        // Show modal
+                        new bootstrap.Modal(document.getElementById('viewPaymentDetailModal')).show();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                    alert('Error loading payment detail');
+                });
+        }
+
+        // View Deployment Detail Function
+        function viewDeploymentDetail(id) {
+            fetch(`/operation-manager/operation-leads/deployment/${id}/edit`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const deployment = data.deployment;
+
+                        // Populate view modal
+                        document.getElementById('view_deployment_date').textContent = deployment.deployment_date ? new Date(deployment.deployment_date).toLocaleString('en-IN') : 'N/A';
+                        document.getElementById('view_deployment_from_date').textContent = deployment.deployment_from_date ? new Date(deployment.deployment_from_date).toLocaleString('en-IN') : 'N/A';
+                        document.getElementById('view_deployment_to_date').textContent = deployment.deployment_to_date ? new Date(deployment.deployment_to_date).toLocaleString('en-IN') : 'N/A';
+                        document.getElementById('view_deployment_status').textContent = deployment.deployment_status || 'N/A';
+                        document.getElementById('view_duty_hours').textContent = deployment.duty_hours || 'N/A';
+                        document.getElementById('view_vendor').textContent = deployment.vendor ? deployment.vendor.name : 'N/A';
+                        document.getElementById('view_staff_name').textContent = deployment.staff_name || 'N/A';
+                        document.getElementById('view_staff_number').textContent = deployment.staff_number || 'N/A';
+                        document.getElementById('view_payment_term').textContent = deployment.payment_term || 'N/A';
+                        document.getElementById('view_vendor_rate_per_day').textContent = deployment.vendor_rate_per_day ? `₹${parseFloat(deployment.vendor_rate_per_day).toFixed(2)}` : 'N/A';
+                        document.getElementById('view_vendor_payment').textContent = deployment.vendor_payment ? `₹${parseFloat(deployment.vendor_payment).toFixed(2)}` : 'N/A';
+                        document.getElementById('view_deployment_remark').textContent = deployment.remark || 'N/A';
+
+                        // Show modal
+                        new bootstrap.Modal(document.getElementById('viewDeploymentDetailModal')).show();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading deployment detail');
+                });
+        }
+
+        // Function to toggle status remark fields in edit modal
+        function toggleStatusRemark() {
+            var statusSelect = document.querySelector('select[name="status"]');
+            var priceIssueRemarkGroup = document.getElementById('edit_price_issue_remark_group');
+            var inactiveRemarkGroup = document.getElementById('edit_inactive_remark_group');
+            var closedRemarkGroup = document.getElementById('edit_closed_remark_group');
+            if (statusSelect) {
+                var status = statusSelect.value;
+                if (priceIssueRemarkGroup) {
+                    priceIssueRemarkGroup.classList.toggle('d-none', status !== 'price issue');
+                }
+                if (inactiveRemarkGroup) {
+                    inactiveRemarkGroup.classList.toggle('d-none', status !== 'inactive');
+                }
+                if (closedRemarkGroup) {
+                    closedRemarkGroup.classList.toggle('d-none', status !== 'closed');
+                }
+            }
+        }
+
+        // Function to toggle query remark field in edit modal
+        function toggleQueryRemark() {
+            var querySelect = document.querySelector('select[name="query"]');
+            var queryRemarkGroup = document.getElementById('edit_query_remark_group');
+            if (querySelect && queryRemarkGroup) {
+                var query = querySelect.value;
+                // Show query remark field for any selected query
+                queryRemarkGroup.classList.toggle('d-none', !query || query === '');
+            }
+        }
+
+        // Function to toggle status remark field when edit modal opens
+        function toggleEditStatusRemark() {
+            setTimeout(function() {
+                toggleStatusRemark();
+            }, 100);
+        }
+
+        // Load filtered vendors for deployment forms
+        function loadFilteredVendors() {
+            const leadLocation = '{{ $lead->location }}';
+            const leadService = '{{ $lead->query }}';
+
+            // Load vendors for add deployment form
+            fetch(`/operation-manager/operation-leads/filtered-vendors?location=${encodeURIComponent(leadLocation)}&service=${encodeURIComponent(leadService)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const vendorSelect = document.getElementById('vendor_id');
+                        if (vendorSelect) {
+                            vendorSelect.innerHTML = '<option value="">Select Vendor</option>';
+                            data.vendors.forEach(vendor => {
+                                const option = document.createElement('option');
+                                option.value = vendor.id;
+                                option.textContent = vendor.name;
+                                if (vendor.is_freelance) {
+                                    option.textContent += ' (Freelance)';
+                                }
+                                vendorSelect.appendChild(option);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading vendors:', error);
+                    const vendorSelect = document.getElementById('vendor_id');
+                    if (vendorSelect) {
+                        vendorSelect.innerHTML = '<option value="">Error loading vendors</option>';
+                    }
+                });
+
+            // Load vendors for edit deployment form
+            fetch(`/operation-manager/operation-leads/filtered-vendors?location=${encodeURIComponent(leadLocation)}&service=${encodeURIComponent(leadService)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const editVendorSelect = document.getElementById('edit_vendor_id');
+                        if (editVendorSelect) {
+                            editVendorSelect.innerHTML = '<option value="">Select Vendor</option>';
+                            data.vendors.forEach(vendor => {
+                                const option = document.createElement('option');
+                                option.value = vendor.id;
+                                option.textContent = vendor.name;
+                                if (vendor.is_freelance) {
+                                    option.textContent += ' (Freelance)';
+                                }
+                                editVendorSelect.appendChild(option);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading vendors:', error);
+                    const editVendorSelect = document.getElementById('edit_vendor_id');
+                    if (editVendorSelect) {
+                        editVendorSelect.innerHTML = '<option value="">Error loading vendors</option>';
+                    }
+                });
+        }
+
+        // Call loadFilteredVendors when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFilteredVendors();
+        });
+
+        // Function to toggle stopped remark field in payment modal
+        function toggleStoppedRemark() {
+            var ongoingStoppedSelect = document.getElementById('ongoing_stopped');
+            var stoppedRemarkGroup = document.getElementById('stopped_remark_group');
+            if (ongoingStoppedSelect && stoppedRemarkGroup) {
+                var status = ongoingStoppedSelect.value;
+                stoppedRemarkGroup.classList.toggle('d-none', status !== 'stopped');
+            }
+        }
+
+        // Toggle Verify Payment Function
+        function toggleVerifyPayment(deploymentId, isChecked) {
+            $.ajax({
+                url: `{{ url('operation-manager/operation-leads/deployment') }}/${deploymentId}/toggle-verify-payment`,
+                type: 'POST',
+                data: {
+                    verify_payment: isChecked,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message || 'Failed to update payment verification status');
+                        // Revert checkbox state on error
+                        $(`input[data-deployment-id="${deploymentId}"]`).prop('checked', !isChecked);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    toastr.error('Error updating payment verification status. Please try again.');
+                    // Revert checkbox state on error
+                    $(`input[data-deployment-id="${deploymentId}"]`).prop('checked', !isChecked);
+                }
+            });
+        }
+    </script>
+@endsection

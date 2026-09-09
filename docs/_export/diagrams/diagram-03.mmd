@@ -1,0 +1,25 @@
+flowchart TB
+    subgraph clients [Clients]
+        CRMWeb[CRM Browser UI]
+        CareWeb[CareWeb Public Site]
+        Mobile[Mobile Apps Sanctum]
+        Portals[Vendor Customer B2B Portals]
+    end
+    subgraph laravel [CareCRM Laravel Monolith]
+        Routes[routes/web.php + api.php]
+        Controllers[Role Controllers 137 files]
+        Services[app/Services 41 classes]
+        Models[app/Models 79 models]
+        Observers[Lead OperationLead Observers]
+        Jobs[MissedCallback FutureProspect Jobs]
+        Events[Broadcast Events via SafeBroadcast]
+    end
+    subgraph infra [Infrastructure]
+        MySQL[(MySQL)]
+        Reverb[Laravel Reverb WebSocket]
+        Queue[Queue default sync]
+        Scheduler[Artisan Scheduler]
+    end
+    clients --> Routes --> Controllers --> Services --> Models --> MySQL
+    Services --> Events --> Reverb --> CRMWeb
+    Scheduler --> Jobs
