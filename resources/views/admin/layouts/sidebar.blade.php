@@ -379,6 +379,12 @@ $route_name = Route::currentRouteName();
                         </ul>
                     </li>
                     <li class="nav-item">
+                         <a href="{{route('admin.bulk_registration.index')}}" class="nav-link {{ strpos($route_name, 'bulk_registration') !== false ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-money-bill-wave"></i>
+                            <p>Bulk Price / Reg</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                          <a href="{{route('admin.technical-support.index')}}" class="nav-link {{ strpos($route_name, 'technical-support') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-headset"></i>
                             <p>Technical Support</p>

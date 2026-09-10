@@ -797,6 +797,8 @@ Route::post('/update-profile-image/{member_id?}', [Controllers\AuthController::c
 // Routes for Admin Role
 Route::prefix('/admin')->middleware(['auth', 'role:Admin'])->group(function () {
     Route::get('/dashboard', [Controllers\Admin\AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/bulk-registration', [Controllers\Admin\BulkRegistrationController::class, 'index'])->name('admin.bulk_registration.index');
+    Route::post('/bulk-registration', [Controllers\Admin\BulkRegistrationController::class, 'store'])->name('admin.bulk_registration.store');
     Route::get('/dashboard/sales-leads-stats', [Controllers\Admin\AdminController::class, 'getSalesLeadsStats'])->name('admin.dashboard.sales-leads-stats');
     Route::get('/dashboard/operation-leads-stats', [Controllers\Admin\AdminController::class, 'getOperationLeadsStats'])->name('admin.dashboard.operation-leads-stats');
     Route::get('/dashboard/users-stats', [Controllers\Admin\AdminController::class, 'getUsersStats'])->name('admin.dashboard.users-stats');

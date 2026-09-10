@@ -26,6 +26,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('missed-callback:run-due')
             ->everyMinute()
             ->timezone('Asia/Kolkata');
+
+        // Check for temporary pricing rules that expired and revert them
+        $schedule->command('pricing:revert-temporary')
+            ->dailyAt('00:05')
+            ->timezone('Asia/Kolkata');
     }
 
     /**
