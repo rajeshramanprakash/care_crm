@@ -131,10 +131,11 @@
                       <label>Pricing Type</label>
                       <select id="pricingType" name="pricing_type" required>
                       <option value="">Select Type</option>
-                      <option value="doctor">Doctor</option>
+                      <option value="doctor_payout">Doctor Payout Only</option>
                       <option value="vendor">Vendor</option>
                       <option value="freelancer">Freelancer</option>
-                      <option value="website">Website</option>
+                      <option value="website_general">Website - General Services</option>
+                      <option value="website_doctor">Website - Doctor Consultations</option>
                     </select>
                   </div>
 
@@ -310,11 +311,11 @@
       <div class="modal-body">
         <div style="margin-bottom: 12px;">
             <label style="font-size:13px; font-weight:600;">From Date</label>
-            <input type="date" class="form-control" id="modalFromDate" style="border-radius:8px; border:1px solid #cfd8dc;">
+            <input type="datetime-local" class="form-control" id="modalFromDate" style="border-radius:8px; border:1px solid #cfd8dc;">
         </div>
         <div>
             <label style="font-size:13px; font-weight:600;">To Date</label>
-            <input type="date" class="form-control" id="modalToDate" style="border-radius:8px; border:1px solid #cfd8dc;">
+            <input type="datetime-local" class="form-control" id="modalToDate" style="border-radius:8px; border:1px solid #cfd8dc;">
         </div>
       </div>
       <div class="modal-footer" style="border-top:none; padding-top:0;">
@@ -329,26 +330,33 @@
 @section('footer-script')
 <script>
     const servicesData = @json($services);
+    const doctorServicesData = @json($doctorServices);
+    let activeServicesList = servicesData; // Default
 
     const serviceSelect = document.getElementById('serviceSelect');
     const subServiceSelect = document.getElementById('subServiceSelect');
 
+    function populateServiceSelect() {
+      let options = '<option value="">All Services</option>';
+      activeServicesList.forEach(s => {
+        options += `<option value="${s.id}">${s.name}</option>`;
+      });
+      serviceSelect.innerHTML = options;
+      subServiceSelect.innerHTML = '<option value="">All Sub Services</option>';
+    }
+
     serviceSelect.addEventListener('change', function() {
       const selectedServiceId = this.value;
-      
       let subOptions = '<option value="">All Sub Services</option>';
 
       if (selectedServiceId) {
-        // Since selectedServiceId is a string from select, use ==
-        const selectedService = servicesData.find(s => s.id == selectedServiceId);
-        
+        const selectedService = activeServicesList.find(s => s.id == selectedServiceId);
         if (selectedService && selectedService.sub_services) {
           selectedService.sub_services.forEach(sub => {
             subOptions += `<option value="${sub.id}">${sub.name}</option>`;
           });
         }
       }
-      
       subServiceSelect.innerHTML = subOptions;
     });
 
@@ -376,7 +384,10 @@
     pricingType.addEventListener('change', function(){
       let options = '';
 
-      if(this.value === 'doctor'){
+      if(this.value === 'doctor_payout' || this.value === 'website_doctor'){
+        activeServicesList = doctorServicesData;
+        populateServiceSelect();
+
         options = `
           <option value="">Select option</option>
           <option value="Online">Online</option>
@@ -384,7 +395,10 @@
           <option value="Clinic">Clinic</option>
         `;
       }
-      else if(this.value === 'vendor' || this.value === 'freelancer'){
+      else if(this.value === 'vendor' || this.value === 'freelancer' || this.value === 'website_general'){
+        activeServicesList = servicesData;
+        populateServiceSelect();
+
         options = `
           <option value="">Select option</option>
           <option value="12_hours">12 Hours</option>
@@ -393,12 +407,10 @@
           <option value="one_time">One-time</option>
         `;
       }
-      else if(this.value === 'website'){
-        options = `
-          <option value="">All Website Pricing</option>
-        `;
-      }
       else{
+        activeServicesList = servicesData;
+        populateServiceSelect();
+
         options = `
           <option value="">Select option</option>
         `;
@@ -446,7 +458,7 @@
             return;
         }
         
-        let displayStr = `${fromDate} to ${toDate}`;
+        let displayStr = `${fromDate.replace('T', ' ')} to ${toDate.replace('T', ' ')}`;
         
         if (currentDateTarget === 'applyTo') {
             applyToDateDisplay.innerText = displayStr;

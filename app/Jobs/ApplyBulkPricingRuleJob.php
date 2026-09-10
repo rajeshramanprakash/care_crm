@@ -38,13 +38,18 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             case 'vendor':
                 $this->applyToVendors();
                 break;
-            case 'doctor':
-                $this->applyToDoctors();
+            case 'doctor_payout':
+                $this->applyToDoctorsPayout();
                 break;
             case 'freelancer':
                 $this->applyToFreelancers();
                 break;
-            // website can be handled later based on needs
+            case 'website_general':
+                $this->applyToWebsiteGeneral();
+                break;
+            case 'website_doctor':
+                $this->applyToWebsiteDoctor();
+                break;
         }
 
         Log::info("Completed ApplyBulkPricingRuleJob for rule ID: {$this->rule->id}");
@@ -67,16 +72,74 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             case 'decrease_percent':
                 return max(0, $currentPrice - ($currentPrice * ($value / 100)));
             case 'revert_increase_percent':
-                // New = Old * (1 + V/100) => Old = New / (1 + V/100)
                 return max(0, $currentPrice / (1 + ($value / 100)));
             case 'revert_decrease_percent':
-                // New = Old * (1 - V/100) => Old = New / (1 - V/100)
-                // Avoid division by zero if value is 100%
                 if ($value >= 100) return $currentPrice;
                 return max(0, $currentPrice / (1 - ($value / 100)));
             default:
                 return $currentPrice;
         }
+    }
+
+    private function getCityFilterLocationIds()
+    {
+        $filter = $this->rule->city_filter;
+        if (in_array($filter, ['tier_1', 'tier_2', 'tier_3'])) {
+            $tierName = ucfirst(str_replace('_', ' ', $filter));
+            return \App\Models\Location::where('tier', $tierName)->pluck('id')->toArray();
+        }
+        return null;
+    }
+
+    private function getCityFilterLocationNames()
+    {
+        $filter = $this->rule->city_filter;
+        if (in_array($filter, ['tier_1', 'tier_2', 'tier_3'])) {
+            $tierName = ucfirst(str_replace('_', ' ', $filter));
+            return \App\Models\Location::where('tier', $tierName)->pluck('name')->toArray();
+        }
+        return null;
+    }
+
+    private function applyToWebsiteGeneral()
+    {
+        $query = \Illuminate\Support\Facades\DB::table('location_services');
+        
+        if ($this->rule->service_id) {
+            $query->where('service_id', $this->rule->service_id);
+        }
+        if ($this->rule->sub_service_id) {
+            $query->where('service_sub_service_id', $this->rule->sub_service_id);
+        }
+        
+        $locationIds = $this->getCityFilterLocationIds();
+        if ($locationIds !== null) {
+            $query->whereIn('location_id', $locationIds);
+        }
+
+        $query->orderBy('id')->chunk(200, function ($prices) {
+            foreach ($prices as $priceRecord) {
+                $updateData = [];
+                
+                if (isset($priceRecord->price_12hr)) {
+                    $updateData['price_12hr'] = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);
+                }
+                
+                if (isset($priceRecord->price_24hr)) {
+                    $updateData['price_24hr'] = $this->calculateNewPrice($priceRecord->price_24hr, $this->rule->change_type, $this->rule->value);
+                }
+
+                if (isset($priceRecord->price_onetime)) {
+                    $updateData['price_onetime'] = $this->calculateNewPrice($priceRecord->price_onetime, $this->rule->change_type, $this->rule->value);
+                }
+                
+                if (!empty($updateData)) {
+                    \Illuminate\Support\Facades\DB::table('location_services')
+                        ->where('id', $priceRecord->id)
+                        ->update($updateData);
+                }
+            }
+        });
     }
 
     private function applyToVendors()
@@ -90,9 +153,15 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             $query->where('service_sub_service_id', $this->rule->sub_service_id);
         }
 
+        $locationIds = $this->getCityFilterLocationIds();
+        if ($locationIds !== null) {
+            $query->whereHas('vendor', function($q) use ($locationIds) {
+                $q->whereIn('location_id', $locationIds);
+            });
+        }
+
         $query->chunk(200, function ($prices) {
             foreach ($prices as $priceRecord) {
-                // Determine which fields to update based on mode_type
                 $mode = $this->rule->mode_type;
                 
                 if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
@@ -112,7 +181,7 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
         });
     }
 
-    private function applyToDoctors()
+    private function applyToDoctorsPayout()
     {
         $query = LocationDoctorConsultationPrice::query();
         
@@ -127,12 +196,42 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             $query->where('consultation_mode', $this->rule->mode_type);
         }
 
+        $locationIds = $this->getCityFilterLocationIds();
+        if ($locationIds !== null) {
+            $query->whereIn('location_id', $locationIds);
+        }
+
         $query->chunk(200, function ($prices) {
             foreach ($prices as $priceRecord) {
-                // Update website_price and doctor_max_price
-                $priceRecord->website_price = $this->calculateNewPrice($priceRecord->website_price, $this->rule->change_type, $this->rule->value);
                 $priceRecord->doctor_max_price = $this->calculateNewPrice($priceRecord->doctor_max_price, $this->rule->change_type, $this->rule->value);
-                
+                $priceRecord->save();
+            }
+        });
+    }
+
+    private function applyToWebsiteDoctor()
+    {
+        $query = LocationDoctorConsultationPrice::query();
+        
+        if ($this->rule->service_id) {
+            $query->where('doctor_consultation_service_id', $this->rule->service_id);
+        }
+        if ($this->rule->sub_service_id) {
+            $query->where('doctor_consultation_service_sub_service_id', $this->rule->sub_service_id);
+        }
+        
+        if ($this->rule->mode_type) {
+            $query->where('consultation_mode', $this->rule->mode_type);
+        }
+
+        $locationIds = $this->getCityFilterLocationIds();
+        if ($locationIds !== null) {
+            $query->whereIn('location_id', $locationIds);
+        }
+
+        $query->chunk(200, function ($prices) {
+            foreach ($prices as $priceRecord) {
+                $priceRecord->website_price = $this->calculateNewPrice($priceRecord->website_price, $this->rule->change_type, $this->rule->value);
                 $priceRecord->save();
             }
         });
@@ -149,12 +248,17 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             $query->where('service_sub_service_id', $this->rule->sub_service_id);
         }
 
+        $locationIds = $this->getCityFilterLocationIds();
+        if ($locationIds !== null) {
+            $query->whereHas('jobRequest', function($q) use ($locationIds) {
+                $q->whereIn('location_id', $locationIds);
+            });
+        }
+
         $query->chunk(200, function ($prices) {
             foreach ($prices as $priceRecord) {
                 $mode = $this->rule->mode_type;
                 
-                // Assuming JobRequestServicePrice has similar fields to VendorServicePrice
-                // You can adapt this based on the exact schema of JobRequestServicePrice
                 if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
                     if (isset($priceRecord->price_12hr)) {
                         $priceRecord->price_12hr = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);

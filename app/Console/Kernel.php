@@ -29,7 +29,7 @@ class Kernel extends ConsoleKernel
 
         // Check for temporary pricing rules that expired and revert them
         $schedule->command('pricing:revert-temporary')
-            ->dailyAt('00:05')
+            ->everyMinute()
             ->timezone('Asia/Kolkata');
     }
 

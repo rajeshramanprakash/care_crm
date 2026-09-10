@@ -34,6 +34,7 @@ class JobRequest extends Model
         'other_remark',
         'city',
         'location',
+        'location_id',
         'full_address',
         'full_address_lat',
         'full_address_lng',
@@ -228,5 +229,24 @@ class JobRequest extends Model
     public function latestLeegalitySignature(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(FreelancerLeegalitySignature::class, 'job_request_id')->latestOfMany('id');
+    }
+
+    public function locationModel()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            if ($model->isDirty('city') && !empty($model->city)) {
+                $loc = \App\Models\Location::where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), strtolower(trim($model->city)))->first();
+                if ($loc) {
+                    $model->location_id = $loc->id;
+                }
+            }
+        });
     }
 }

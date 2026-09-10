@@ -11,17 +11,18 @@ class BulkRegistrationController extends Controller
     public function index()
     {
         $services = Service::with('subServices')->get();
+        $doctorServices = \App\Models\DoctorConsultationService::with('subServices')->get();
         // Also fetch active bulk rules to display
         $activeRules = \App\Models\BulkPricingRule::with(['service', 'subService'])->where('status', 1)->get();
-        return view('admin.bulk_registration.index', compact('services', 'activeRules'));
+        return view('admin.bulk_registration.index', compact('services', 'doctorServices', 'activeRules'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'pricing_type' => 'required|string',
-            'service_id' => 'nullable|exists:services,id',
-            'sub_service_id' => 'nullable|exists:service_sub_services,id',
+            'pricing_type' => 'required|in:doctor_payout,vendor,freelancer,website_general,website_doctor',
+            'service_id' => 'nullable|integer',
+            'sub_service_id' => 'nullable|integer',
             'mode_type' => 'nullable|string',
             'change_type' => 'required|string',
             'value' => 'required|numeric',

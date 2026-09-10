@@ -30,7 +30,7 @@ class RevertTemporaryPricingCommand extends Command
     {
         $expiredRules = BulkPricingRule::where('time_period', 'temporary')
             ->where('status', 1)
-            ->whereDate('time_period_end_date', '<', now())
+            ->where('time_period_end_date', '<=', now())
             ->get();
 
         if ($expiredRules->isEmpty()) {

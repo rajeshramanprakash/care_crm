@@ -25,6 +25,7 @@ class Vendor extends Model
         'service_sub_services',
         'vendor_services',
         'location',
+        'location_id',
         'account_name',
         'account_number',
         'ifsc_code',
@@ -48,6 +49,25 @@ class Vendor extends Model
     public function payments()
     {
         return $this->hasMany(VendorPayment::class);
+    }
+
+    public function locationModel()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            if ($model->isDirty('location') && !empty($model->location)) {
+                $loc = \App\Models\Location::where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), strtolower(trim($model->location)))->first();
+                if ($loc) {
+                    $model->location_id = $loc->id;
+                }
+            }
+        });
     }
 
     public function priceChangeRequests()
