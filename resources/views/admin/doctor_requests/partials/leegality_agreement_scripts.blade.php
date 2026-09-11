@@ -47,6 +47,7 @@
     $.ajax({
       url: url,
       type: 'POST',
+      timeout: 120000,
       data: { _token: csrfToken() },
       success: function (res) {
         if (res.success) {

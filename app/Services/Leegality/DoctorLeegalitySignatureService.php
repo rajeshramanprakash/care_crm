@@ -108,11 +108,7 @@ class DoctorLeegalitySignatureService
             }
         }
         
-        if ($signUrl) {
-            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\DoctorLeegalitySignatureMail($doctor, $signUrl));
-        }
-
-        return DoctorLeegalitySignature::create([
+        $signature = DoctorLeegalitySignature::create([
             'doctor_request_id' => $doctor->id,
             'leegality_document_id' => $documentId,
             'irn' => (string) ($data['irn'] ?? $irn),
@@ -125,6 +121,20 @@ class DoctorLeegalitySignatureService
             'create_response' => $response,
             'sent_by' => Auth::id(),
         ]);
+
+        if ($signUrl) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\DoctorLeegalitySignatureMail($doctor, $signUrl));
+            } catch (\Throwable $e) {
+                Log::warning('Doctor Leegality invite email failed', [
+                    'doctor_request_id' => $doctor->id,
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $signature;
     }
 
     /**
@@ -261,91 +271,71 @@ class DoctorLeegalitySignatureService
             throw new RuntimeException('Doctor signature not found. Doctor must sign first.');
         }
 
+        $canAddAuth = $signature->isSignedLike()
+            || strcasecmp((string) $signature->document_status, 'Completed') === 0
+            || in_array((string) $signature->signer_action, ['AUTH_SIGN_SENT', 'AUTH_SIGN_PENDING', 'SIGNED', 'BOTH_SIGNED'], true)
+            || ($signature->signed_document && Storage::disk('public')->exists($signature->signed_document));
+
+        if (! $canAddAuth) {
+            throw new RuntimeException('Doctor must finish signing before Add My Signature.');
+        }
+
         $documentId = (string) $signature->leegality_document_id;
-
-        // 1. Fetch Doctor's partially signed PDF Base64
-        $partiallySignedPdfBase64 = null;
-
-        if ($signature->signed_document && Storage::disk('public')->exists($signature->signed_document)) {
-            $partiallySignedPdfBase64 = base64_encode((string) Storage::disk('public')->get($signature->signed_document));
-        }
-
-        if (! $partiallySignedPdfBase64) {
-            $fetchRes = $this->client->fetchDocument($documentId, 'DOCUMENT');
-            if (isset($fetchRes['data']['file']) && is_string($fetchRes['data']['file'])) {
-                $bin = Http::timeout(60)->get($fetchRes['data']['file']);
-                if ($bin->successful() && $bin->body() !== '') {
-                    $partiallySignedPdfBase64 = base64_encode($bin->body());
-                }
-            }
-        }
-
-        if (! $partiallySignedPdfBase64) {
-            $details = $this->client->documentDetails($documentId, true, false);
-            $fileUrl = $details['data']['file'] ?? ($details['data']['files'][0] ?? null);
-            if ($fileUrl && is_string($fileUrl)) {
-                if (str_starts_with($fileUrl, 'http://') || str_starts_with($fileUrl, 'https://')) {
-                    $bin = Http::timeout(60)->get($fileUrl);
-                    if ($bin->successful() && $bin->body() !== '') {
-                        $partiallySignedPdfBase64 = base64_encode($bin->body());
-                    }
-                } else {
-                    $partiallySignedPdfBase64 = $fileUrl;
-                }
-            }
-        }
-
+        $partiallySignedPdfBase64 = $this->resolveSignedPdfBase64($signature, $documentId);
         if (! $partiallySignedPdfBase64) {
             throw new RuntimeException('Signed PDF content missing in Leegality response. Ensure Doctor has completed signature.');
         }
 
-        // 2. Build Authorised Signatory Invitee Payload with appearances and optional Automated Signer
         $authName = (string) config('leegality.authorised_signatory_name', 'Carelix Authorised Signatory');
         $authEmail = (string) config('leegality.authorised_signatory_email', 'legal@carelixhealthcare.com');
         $authPhone = preg_replace('/\D+/', '', (string) config('leegality.authorised_signatory_phone', '7666426664')) ?: null;
+        $signerId = trim((string) config('leegality.automated_signer_id'));
+        $passkey = trim((string) config('leegality.automated_signer_passkey'));
+
+        if ($signerId === '' || $passkey === '') {
+            throw new RuntimeException('Set LEEGALITY_AUTOMATED_SIGNER_ID and LEEGALITY_AUTOMATED_SIGNER_PASSKEY in .env for Virtual Signature auto-sign.');
+        }
 
         $irn = 'AUTH-CRLX-DR-'.$doctor->id.'-'.time();
-
         $invitee = [
             'name' => $authName,
             'email' => $authEmail,
             'phone' => $authPhone,
             'emailNotification' => false,
             'phoneNotification' => false,
-            'appearances' => [
-                [
-                    'page' => 'L',
-                    'x1' => (int) config('leegality.appearance_x1', 40),
-                    'y1' => (int) config('leegality.appearance_y1', 40),
-                    'x2' => (int) config('leegality.appearance_x2', 200),
-                    'y2' => (int) config('leegality.appearance_y2', 100),
-                ],
+            // Documented V3/V4 automated Virtual Sign fields
+            'enableAutomatedSign' => true,
+            'automatedSignConfig' => [
+                'automatedSignProfile' => $signerId,
+                'automatedSignPassword' => $passkey,
+                'profileId' => $signerId,
+                'password' => $passkey,
+                'id' => $signerId,
+                'passkey' => $passkey,
             ],
+            // Legacy AUTOMATED_SIGN shape (kept for older workflow runtimes)
+            'signatures' => [[
+                'type' => 'AUTOMATED_SIGN',
+                'config' => [
+                    'id' => $signerId,
+                    'passkey' => $passkey,
+                    'password' => $passkey,
+                ],
+            ]],
+            'appearances' => [[
+                'page' => 'L',
+                'x1' => (int) config('leegality.appearance_x1', 40),
+                'y1' => (int) config('leegality.appearance_y1', 40),
+                'x2' => (int) config('leegality.appearance_x2', 200),
+                'y2' => (int) config('leegality.appearance_y2', 100),
+            ]],
         ];
-
         if (empty($invitee['phone'])) {
             unset($invitee['phone']);
         }
 
-        $signerId = trim((string) config('leegality.automated_signer_id'));
-        $passkey = trim((string) config('leegality.automated_signer_passkey'));
-
-        if ($signerId !== '' && $passkey !== '') {
-            $invitee['signatures'] = [
-                [
-                    'type' => 'AUTOMATED_SIGN',
-                    'config' => [
-                        'id' => $signerId,
-                        'passkey' => $passkey,
-                    ],
-                ],
-            ];
-        }
-
-        $profileId = trim((string) config('leegality.auth_profile_id'));
-        if ($profileId === '') {
-            $profileId = trim((string) config('leegality.profile_id'));
-        }
+        $profileId = trim((string) config('leegality.auth_profile_id'))
+            ?: trim((string) config('leegality.profile_id'));
 
         $payload = [
             'file' => [
@@ -355,76 +345,212 @@ class DoctorLeegalitySignatureService
             'irn' => $irn,
             'invitees' => [$invitee],
         ];
-
         if ($profileId !== '') {
             $payload['profileId'] = $profileId;
         }
 
-        // 3. Send signing request to Leegality for Authorised Signatory
         $response = $this->client->createSignRequest($payload);
-        $status = (int) ($response['status'] ?? 0);
-        if ($status !== 1) {
-            $errMsg = $this->client->firstMessage($response) ?: 'Authorised signature request failed on Leegality.';
-            throw new RuntimeException($errMsg);
+        if ((int) ($response['status'] ?? 0) !== 1) {
+            throw new RuntimeException($this->client->firstMessage($response) ?: 'Authorised signature request failed on Leegality.');
         }
 
         $data = is_array($response['data'] ?? null) ? $response['data'] : [];
         $finalDocId = (string) ($data['documentId'] ?? $documentId);
+        $signUrl = $this->extractSignUrl($data);
 
-        $signUrl = null;
-        $invitations = is_array($data['invitations'] ?? null) ? $data['invitations'] : (is_array($data['invitees'] ?? null) ? $data['invitees'] : []);
-        if ($invitations !== []) {
-            $first = $invitations[0];
-            if (is_array($first)) {
-                $signUrl = $first['signUrl'] ?? $first['invitationUrl'] ?? null;
-            }
-        }
+        // Wait for Leegality to apply Virtual Signature (Automated Sign) before saving PDF for View.
+        $completion = $this->waitForDocumentCompletion($finalDocId, 8, 4);
+        $isCompleted = (bool) ($completion['completed'] ?? false);
+        $docStatus = (string) ($completion['status'] ?? 'Sent');
 
-        // 4. Download final executed PDF & store locally
         $dir = 'leegality/signatures/'.$doctor->id.'/'.$signature->id;
         Storage::disk('public')->makeDirectory($dir);
-        $signedPath = $dir.'/final-executed.pdf';
+        $doctorOnlyPath = $dir.'/signed.pdf';
+        $finalPath = $dir.'/final-executed.pdf';
 
-        $finalFetched = $this->storeFetchedFile($finalDocId, 'DOCUMENT', $signedPath);
-        if (! $finalFetched && ! empty($data['file'])) {
-            $finalFetched = $this->storeRemoteUrl((string) $data['file'], $signedPath);
+        // Never replace the doctor-signed PDF with an incomplete auth document.
+        $keptDoctorPdf = $signature->signed_document;
+        if ($keptDoctorPdf && Storage::disk('public')->exists($keptDoctorPdf) && ! str_ends_with((string) $keptDoctorPdf, '/final-executed.pdf')) {
+            // keep as-is
+        } elseif (Storage::disk('public')->exists($doctorOnlyPath)) {
+            $keptDoctorPdf = $doctorOnlyPath;
         }
 
-        // Check if both signers have completed
-        $details = $this->client->documentDetails($finalDocId, true, false);
-        $docData = is_array($details['data'] ?? null) ? $details['data'] : [];
-        $docStatus = (string) ($docData['documentStatus'] ?? ($data['documentStatus'] ?? 'Sent'));
-        $isCompleted = strcasecmp($docStatus, 'Completed') === 0;
+        $finalFetched = null;
+        if ($isCompleted) {
+            $finalFetched = $this->storeFetchedFile($finalDocId, 'DOCUMENT', $finalPath);
+            if (! $finalFetched) {
+                $details = $this->client->documentDetails($finalDocId, true, false);
+                $fileUrl = $details['data']['file'] ?? null;
+                if (is_string($fileUrl) && $fileUrl !== '') {
+                    $finalFetched = $this->storeRemoteUrl($fileUrl, $finalPath);
+                }
+            }
+            $auditPath = $this->storeFetchedFile($finalDocId, 'AUDIT_TRAIL', $dir.'/audit-trail.pdf');
+        }
 
-        // 5. Update database record
         $signature->update([
             'leegality_document_id' => $finalDocId,
-            'signed_document' => $finalFetched ?: $signature->signed_document,
+            'signed_document' => $finalFetched ?: $keptDoctorPdf ?: $signature->signed_document,
+            'audit_trail' => ($isCompleted && ! empty($auditPath)) ? $auditPath : $signature->audit_trail,
             'sign_url' => $signUrl ?: $signature->sign_url,
-            'signature_status' => $isCompleted ? DoctorLeegalitySignature::STATUS_COMPLETED : DoctorLeegalitySignature::STATUS_SENT,
-            'signer_action' => $isCompleted ? 'BOTH_SIGNED' : 'AUTH_SIGN_SENT',
+            'signature_status' => $isCompleted ? DoctorLeegalitySignature::STATUS_COMPLETED : DoctorLeegalitySignature::STATUS_SIGNED,
+            'signer_action' => $isCompleted ? 'BOTH_SIGNED' : 'AUTH_SIGN_PENDING',
             'document_status' => $docStatus,
-            'signed_at' => $isCompleted ? ($signature->signed_at ?: now()) : $signature->signed_at,
+            'signed_at' => $signature->signed_at ?: now(),
+            'create_response' => $response,
+            'error_message' => $isCompleted ? null : 'Authorised Virtual Signature not applied yet by Leegality Automated Sign.',
         ]);
 
-        // 6. If completed, send final executed agreement PDF with both signatures to doctor via email
-        if ($isCompleted && $email = trim((string) ($signature->signer_email ?: $doctor->email))) {
-            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $signature->signed_document) {
-                try {
-                    \Illuminate\Support\Facades\Mail::to($email)->send(
-                        new \App\Mail\FinalSignedAgreementMail(
-                            $doctor->name ?: 'Doctor',
-                            'doctor',
-                            $signature->signed_document
-                        )
-                    );
-                } catch (\Throwable $e) {
-                    Log::warning('Sending final dual-signed agreement email failed', ['error' => $e->getMessage()]);
-                }
+        if (! $isCompleted) {
+            $hint = 'Leegality did not auto-apply your Virtual Signature. '
+                .'In Leegality Dashboard open workflow '.$profileId
+                .' → invitee Signature Type → enable Automated Sign'
+                .' → choose profile '.$signerId
+                .' → enter passkey, Save & Publish. Then click Add My Signature again.';
+            if ($signUrl) {
+                $hint .= ' Temporary sign link: '.$signUrl;
+            }
+            throw new RuntimeException($hint);
+        }
+
+        $email = trim((string) ($signature->signer_email ?: $doctor->email));
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $signature->fresh()->signed_document) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($email)->send(
+                    new \App\Mail\FinalSignedAgreementMail(
+                        $doctor->name ?: 'Doctor',
+                        'doctor',
+                        $signature->fresh()->signed_document
+                    )
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Sending final dual-signed agreement email failed', ['error' => $e->getMessage()]);
             }
         }
 
-        return $signature;
+        return $signature->fresh();
+    }
+
+    private function resolveSignedPdfBase64(DoctorLeegalitySignature $signature, string $documentId): ?string
+    {
+        $candidates = array_values(array_filter([
+            $signature->signed_document,
+            'leegality/signatures/'.$signature->doctor_request_id.'/'.$signature->id.'/signed.pdf',
+        ]));
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && $path !== '' && ! str_ends_with($path, '/final-executed.pdf') && Storage::disk('public')->exists($path)) {
+                return base64_encode((string) Storage::disk('public')->get($path));
+            }
+        }
+
+        // Fall back to whatever local PDF we have (including previous final if doctor copy missing).
+        if ($signature->signed_document && Storage::disk('public')->exists($signature->signed_document)) {
+            return base64_encode((string) Storage::disk('public')->get($signature->signed_document));
+        }
+
+        try {
+            $fetchRes = $this->client->fetchDocument($documentId, 'DOCUMENT');
+            $fileUrl = $fetchRes['data']['file'] ?? null;
+            if (is_string($fileUrl) && $fileUrl !== '') {
+                $bin = Http::timeout(60)->get($fileUrl);
+                if ($bin->successful() && $bin->body() !== '') {
+                    return base64_encode($bin->body());
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Could not fetch doctor signed PDF for auth sign', ['error' => $e->getMessage()]);
+        }
+
+        try {
+            $details = $this->client->documentDetails($documentId, true, false);
+            $fileUrl = $details['data']['file'] ?? null;
+            if (is_string($fileUrl) && $fileUrl !== '') {
+                if (str_starts_with($fileUrl, 'http://') || str_starts_with($fileUrl, 'https://')) {
+                    $bin = Http::timeout(60)->get($fileUrl);
+                    if ($bin->successful() && $bin->body() !== '') {
+                        return base64_encode($bin->body());
+                    }
+                } else {
+                    return $fileUrl;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('documentDetails fetch for auth sign failed', ['error' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function extractSignUrl(array $data): ?string
+    {
+        $invitations = is_array($data['invitations'] ?? null)
+            ? $data['invitations']
+            : (is_array($data['invitees'] ?? null) ? $data['invitees'] : []);
+        if ($invitations === []) {
+            return null;
+        }
+        $first = $invitations[0];
+        if (! is_array($first)) {
+            return null;
+        }
+
+        $url = $first['signUrl'] ?? $first['invitationUrl'] ?? null;
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
+    /**
+     * @return array{completed: bool, status: string}
+     */
+    private function waitForDocumentCompletion(string $documentId, int $attempts = 12, int $sleepSeconds = 5): array
+    {
+        $status = 'Sent';
+        for ($i = 0; $i < $attempts; $i++) {
+            if ($i > 0) {
+                sleep($sleepSeconds);
+            }
+            try {
+                $details = $this->client->documentDetails($documentId, false, false);
+                $data = is_array($details['data'] ?? null) ? $details['data'] : [];
+                $status = (string) (
+                    $data['document']['status']
+                    ?? $data['documentStatus']
+                    ?? $status
+                );
+
+                $signed = false;
+                $invitations = is_array($data['invitations'] ?? null) ? $data['invitations'] : [];
+                foreach ($invitations as $inv) {
+                    if (! is_array($inv)) {
+                        continue;
+                    }
+                    $invStatus = is_array($inv['invitationStatus'] ?? null) ? $inv['invitationStatus'] : [];
+                    if (! empty($invStatus['signed']) || ! empty($invStatus['approved'])) {
+                        $signed = true;
+                        break;
+                    }
+                }
+
+                if (strcasecmp($status, 'Completed') === 0 || $signed) {
+                    // Small grace so Leegality finishes writing the signed file.
+                    sleep(2);
+
+                    return ['completed' => true, 'status' => strcasecmp($status, 'Completed') === 0 ? 'Completed' : $status];
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Leegality completion poll failed', [
+                    'documentId' => $documentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return ['completed' => false, 'status' => $status];
     }
 
 
@@ -443,9 +569,15 @@ class DoctorLeegalitySignatureService
         $details = $this->client->documentDetails($documentId, true, true);
         $data = is_array($details['data'] ?? null) ? $details['data'] : [];
 
-        $docStatus = (string) ($data['documentStatus'] ?? $signature->document_status);
+        $docStatus = (string) (
+            $data['document']['status']
+            ?? $data['documentStatus']
+            ?? $signature->document_status
+        );
         $requests = is_array($data['requests'] ?? null) ? $data['requests'] : [];
+        $invitations = is_array($data['invitations'] ?? null) ? $data['invitations'] : [];
         $isSigned = false;
+        $allInviteesSigned = $invitations !== [];
 
         foreach ($requests as $req) {
             if (is_array($req) && in_array(strtoupper(trim((string) ($req['status'] ?? ''))), ['SIGNED', 'APPROVED', 'COMPLETED'], true)) {
@@ -453,22 +585,46 @@ class DoctorLeegalitySignatureService
                 break;
             }
         }
+        foreach ($invitations as $inv) {
+            if (! is_array($inv)) {
+                $allInviteesSigned = false;
+                continue;
+            }
+            $invStatus = is_array($inv['invitationStatus'] ?? null) ? $inv['invitationStatus'] : [];
+            $thisInviteeSigned = ! empty($invStatus['signed']) || ! empty($invStatus['approved']);
+            if ($thisInviteeSigned) {
+                $isSigned = true;
+            } else {
+                $allInviteesSigned = false;
+            }
+        }
         if (! $isSigned && strcasecmp($docStatus, 'Completed') === 0) {
             $isSigned = true;
+            $allInviteesSigned = true;
         }
 
-        $signedPath = $this->storeFetchedFile($documentId, 'DOCUMENT', $dir.'/signed.pdf');
+        $isAuthFlow = str_starts_with((string) $signature->irn, 'AUTH-')
+            || in_array((string) $signature->signer_action, ['AUTH_SIGN_SENT', 'AUTH_SIGN_PENDING', 'BOTH_SIGNED'], true);
+        $targetPdf = ($isAuthFlow && (strcasecmp($docStatus, 'Completed') === 0 || $allInviteesSigned))
+            ? $dir.'/final-executed.pdf'
+            : $dir.'/signed.pdf';
+
+        $signedPath = $this->storeFetchedFile($documentId, 'DOCUMENT', $targetPdf);
         $auditPath = $this->storeFetchedFile($documentId, 'AUDIT_TRAIL', $dir.'/audit-trail.pdf');
 
         if (! $signedPath && ! empty($data['file'])) {
-            $signedPath = $this->storeRemoteUrl((string) $data['file'], $dir.'/signed.pdf');
+            $signedPath = $this->storeRemoteUrl((string) $data['file'], $targetPdf);
         }
         if (! $auditPath && ! empty($data['auditTrail'])) {
             $auditPath = $this->storeRemoteUrl((string) $data['auditTrail'], $dir.'/audit-trail.pdf');
         }
 
         $statusToSet = $signature->signature_status;
-        if ($isSigned && in_array($signature->signature_status, [DoctorLeegalitySignature::STATUS_SENT, DoctorLeegalitySignature::STATUS_FAILED], true)) {
+        if (strcasecmp($docStatus, 'Completed') === 0 || $allInviteesSigned) {
+            $statusToSet = $isAuthFlow
+                ? DoctorLeegalitySignature::STATUS_COMPLETED
+                : DoctorLeegalitySignature::STATUS_SIGNED;
+        } elseif ($isSigned && in_array($signature->signature_status, [DoctorLeegalitySignature::STATUS_SENT, DoctorLeegalitySignature::STATUS_FAILED], true)) {
             $statusToSet = DoctorLeegalitySignature::STATUS_SIGNED;
         }
 
@@ -478,6 +634,10 @@ class DoctorLeegalitySignatureService
             'signed_at' => $isSigned ? ($signature->signed_at ?: now()) : $signature->signed_at,
             'document_status' => $docStatus ?: $signature->document_status,
             'signature_status' => $statusToSet,
+            'signer_action' => (strcasecmp($docStatus, 'Completed') === 0 || $allInviteesSigned)
+                ? ($isAuthFlow ? 'BOTH_SIGNED' : ($signature->signer_action ?: 'SIGNED'))
+                : $signature->signer_action,
+            'error_message' => (strcasecmp($docStatus, 'Completed') === 0 || $allInviteesSigned) ? null : $signature->error_message,
         ]);
         $signature->save();
 
