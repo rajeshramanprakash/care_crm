@@ -35,4 +35,14 @@ class BulkPricingRule extends Model
     {
         return $this->belongsTo(ServiceSubService::class);
     }
+
+    public function doctorService()
+    {
+        return $this->belongsTo(DoctorConsultationService::class, 'service_id');
+    }
+
+    public function doctorSubService()
+    {
+        return $this->belongsTo(DoctorConsultationServiceSubService::class, 'sub_service_id');
+    }
 }

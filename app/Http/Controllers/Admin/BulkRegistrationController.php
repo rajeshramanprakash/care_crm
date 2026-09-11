@@ -13,7 +13,7 @@ class BulkRegistrationController extends Controller
         $services = Service::with('subServices')->get();
         $doctorServices = \App\Models\DoctorConsultationService::with('subServices')->get();
         // Also fetch active bulk rules to display
-        $activeRules = \App\Models\BulkPricingRule::with(['service', 'subService'])->where('status', 1)->get();
+        $activeRules = \App\Models\BulkPricingRule::with(['service', 'subService', 'doctorService', 'doctorSubService'])->where('status', 1)->get();
         return view('admin.bulk_registration.index', compact('services', 'doctorServices', 'activeRules'));
     }
 

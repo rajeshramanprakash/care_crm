@@ -94,6 +94,46 @@
         ];
     }
 
+    $activeTempRules = \App\Models\BulkPricingRule::where('status', 1)
+        ->where('time_period', 'temporary')
+        ->where('pricing_type', 'website_doctor')
+        ->get();
+        
+    $tier1Cities = \App\Models\Location::where('tier', 'Tier 1')->pluck('name')->toArray();
+    
+    $normalizeMode = static function($mode) {
+        if (!$mode) return null;
+        return match (strtolower(trim($mode))) {
+            'online' => 'online',
+            'home visit' => 'home_visit',
+            'clinic' => 'clinic_visit',
+            default => strtolower(str_replace(' ', '_', trim($mode)))
+        };
+    };
+
+    $getMatchingTempRule = static function($subId, $modeKey) use ($activeTempRules, $serviceId, $locationName, $normalizeMode, $tier1Cities) {
+        foreach ($activeTempRules as $rule) {
+            if ($rule->service_id && (int)$rule->service_id !== (int)$serviceId) continue;
+            if ($rule->sub_service_id && (int)$rule->sub_service_id !== (int)$subId) continue;
+            
+            $ruleMode = $normalizeMode($rule->mode_type);
+            if ($ruleMode && $ruleMode !== $modeKey) continue;
+            
+            if ($rule->city_filter && $rule->city_filter !== 'all') {
+                if ($rule->city_filter === 'tier_1') {
+                    if (!in_array($locationName, $tier1Cities)) continue;
+                } else {
+                    if (strtolower($locationName) !== strtolower($rule->city_filter)) continue;
+                }
+            }
+            
+            if ($rule->time_period_start_date) {
+                return $rule;
+            }
+        }
+        return null;
+    };
+
     $requestStatusLabel = static function (string $status): string {
         return match ($status) {
             DoctorConsultationPriceChangeRequest::STATUS_PENDING => 'Pending admin review',
@@ -171,6 +211,7 @@
                                 <tr>
                                     <th>Consultation mode</th>
                                     <th>Your charge</th>
+                                    <th>Temporary price</th>
                                     <th>Request new price (₹)</th>
                                 </tr>
                             </thead>
@@ -190,7 +231,38 @@
                                     @endphp
                                     <tr>
                                         <td>{{ $modeLabels[$modeKey] ?? $modeKey }}</td>
+                                        @php
+                                            $tempRule = $getMatchingTempRule($subId, $modeKey);
+                                            $now = \Carbon\Carbon::now();
+                                            $isActive = false;
+                                            $isFuture = false;
+                                            $start = null;
+                                            $end = null;
+                                            if ($tempRule) {
+                                                $start = \Carbon\Carbon::parse($tempRule->time_period_start_date);
+                                                $end = $tempRule->time_period_end_date ? \Carbon\Carbon::parse($tempRule->time_period_end_date) : null;
+                                                $isActive = $now->gte($start) && (!$end || $now->lte($end));
+                                                $isFuture = $now->lt($start);
+                                            }
+                                        @endphp
                                         <td><strong>{{ $fmtPrice($prices['doctor']) }}</strong></td>
+                                        <td>
+                                            @if($tempRule && ($isActive || $isFuture))
+                                                @php
+                                                    $displayPrice = $tempRule->pricing_type === 'website_doctor' ? $prices['website'] : $prices['doctor'];
+                                                    if (!$displayPrice) {
+                                                        $displayPrice = $tempRule->value; // fallback if it hasn't run yet or is 0
+                                                    }
+                                                @endphp
+                                                <strong class="{{ $isActive ? 'text-success' : 'text-danger' }}">{{ $fmtPrice($displayPrice) }}</strong>
+                                                <div class="mt-1 text-muted" style="font-size: 0.7rem; line-height: 1.2;">
+                                                    From: {{ $start->format('d M Y, h:i A') }}<br>
+                                                    To: {{ $end ? $end->format('d M Y, h:i A') : 'Ongoing' }}
+                                                </div>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
                                         <td class="dr-portal-request-cell">
                                             @if($isPending)
                                                 <div class="dr-portal-req-pending">

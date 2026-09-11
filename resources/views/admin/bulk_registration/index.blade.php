@@ -246,7 +246,6 @@
                                 <th>Apply To</th>
                                 <th>City</th>
                                 <th>Period</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -254,11 +253,20 @@
                             <tr>
                                 <td>{{ ucfirst($rule->pricing_type) }}</td>
                                 <td>
-                                    @if($rule->service)
-                                        {{ $rule->service->name }} 
-                                        @if($rule->subService) <br><small class="text-muted">({{ $rule->subService->name }})</small> @endif
+                                    @if(in_array($rule->pricing_type, ['website_doctor', 'doctor_payout']))
+                                        @if($rule->doctorService)
+                                            {{ $rule->doctorService->name }}
+                                            @if($rule->doctorSubService) <br><small class="text-muted">({{ $rule->doctorSubService->name }})</small> @endif
+                                        @else
+                                            All Services
+                                        @endif
                                     @else
-                                        All Services
+                                        @if($rule->service)
+                                            {{ $rule->service->name }} 
+                                            @if($rule->subService) <br><small class="text-muted">({{ $rule->subService->name }})</small> @endif
+                                        @else
+                                            All Services
+                                        @endif
                                     @endif
                                 </td>
                                 <td>{{ $rule->mode_type ? str_replace('_', ' ', ucfirst($rule->mode_type)) : 'All' }}</td>
@@ -279,9 +287,6 @@
                                     @if($rule->time_period === 'temporary' && $rule->time_period_start_date)
                                         <br><small>{{ $rule->time_period_start_date }} to {{ $rule->time_period_end_date }}</small>
                                     @endif
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                                 </td>
                             </tr>
                             @empty
