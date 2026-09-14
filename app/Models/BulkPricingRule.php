@@ -20,10 +20,15 @@ class BulkPricingRule extends Model
         'apply_from_date',
         'apply_to_date',
         'city_filter',
+        'selected_cities',
         'time_period',
         'time_period_start_date',
         'time_period_end_date',
         'status',
+    ];
+
+    protected $casts = [
+        'selected_cities' => 'array',
     ];
 
     public function service()

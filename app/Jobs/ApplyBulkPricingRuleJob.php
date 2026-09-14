@@ -63,6 +63,8 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
         $value = (float) $value;
 
         switch ($changeType) {
+            case 'normal':
+                return max(0, $value);
             case 'increase_fixed':
                 return max($currentPrice, $value);
             case 'increase_percent':
@@ -85,6 +87,9 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
     {
         $filter = $this->rule->city_filter;
         if (in_array($filter, ['tier_1', 'tier_2', 'tier_3'])) {
+            if (!empty($this->rule->selected_cities)) {
+                return $this->rule->selected_cities;
+            }
             $tierName = ucfirst(str_replace('_', ' ', $filter));
             return \App\Models\Location::where('tier', $tierName)->pluck('id')->toArray();
         }
@@ -95,6 +100,9 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
     {
         $filter = $this->rule->city_filter;
         if (in_array($filter, ['tier_1', 'tier_2', 'tier_3'])) {
+            if (!empty($this->rule->selected_cities)) {
+                return \App\Models\Location::whereIn('id', $this->rule->selected_cities)->pluck('name')->toArray();
+            }
             $tierName = ucfirst(str_replace('_', ' ', $filter));
             return \App\Models\Location::where('tier', $tierName)->pluck('name')->toArray();
         }

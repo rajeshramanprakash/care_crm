@@ -3,7 +3,17 @@
 @section('title', 'Bulk Price Increase / Decrease')
 
 @section('header-css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+    .select2-container .select2-selection--multiple {
+        border: 1px solid #cfd8dc;
+        border-radius: 12px;
+        min-height: 48px;
+        padding: 5px 14px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #e39460;
+    }
     .bulk-card {
       background:#fff;
       border-radius:18px;
@@ -168,6 +178,7 @@
                   <div class="bulk-field">
                     <label>Change Type</label>
                     <select name="change_type" required>
+                      <option value="normal">Normal</option>
                       <option value="increase_fixed">Increase by Fixed Amount</option>
                       <option value="increase_percent">Increase by Percentage</option>
                       <option value="decrease_fixed">Decrease by Fixed Amount</option>
@@ -195,12 +206,18 @@
 
                   <div class="bulk-field">
                     <label>City Filter</label>
-                    <select name="city_filter">
+                    <select id="cityFilterSelect" name="city_filter">
                       <option value="current">Current City Only</option>
                       <option value="all">All Cities</option>
                       <option value="tier_1">Tier 1 Cities</option>
                       <option value="tier_2">Tier 2 Cities</option>
                       <option value="tier_3">Tier 3 Cities</option>
+                    </select>
+                  </div>
+                  
+                  <div class="bulk-field" id="selectedCitiesWrapper" style="display: none; grid-column: span 2;">
+                    <label>Select Specific Cities (Leave empty to apply to all in Tier)</label>
+                    <select id="selectedCitiesSelect" name="selected_cities[]" multiple="multiple" style="width: 100%;">
                     </select>
                   </div>
                 </div>
@@ -271,7 +288,9 @@
                                 </td>
                                 <td>{{ $rule->mode_type ? str_replace('_', ' ', ucfirst($rule->mode_type)) : 'All' }}</td>
                                 <td>
-                                    @if(str_contains($rule->change_type, 'increase'))
+                                    @if($rule->change_type === 'normal')
+                                        <span class="text-primary"><i class="fas fa-check"></i> ₹{{ $rule->value }}</span>
+                                    @elseif(str_contains($rule->change_type, 'increase'))
                                         <span class="text-success"><i class="fas fa-arrow-up"></i> {{ str_contains($rule->change_type, 'percent') ? $rule->value.'%' : '₹'.$rule->value }}</span>
                                     @else
                                         <span class="text-danger"><i class="fas fa-arrow-down"></i> {{ str_contains($rule->change_type, 'percent') ? $rule->value.'%' : '₹'.$rule->value }}</span>
@@ -281,7 +300,12 @@
                                     {{ ucfirst($rule->apply_to) }}
                                     @if($rule->apply_from_date) <br><small>{{ $rule->apply_from_date }} to {{ $rule->apply_to_date }}</small> @endif
                                 </td>
-                                <td>{{ ucfirst(str_replace('_', ' ', $rule->city_filter)) }}</td>
+                                <td>
+                                    {{ ucfirst(str_replace('_', ' ', $rule->city_filter)) }}
+                                    @if(!empty($rule->selected_cities))
+                                        <br><small class="text-muted">{{ count($rule->selected_cities) }} cities selected</small>
+                                    @endif
+                                </td>
                                 <td>
                                     {{ ucfirst($rule->time_period) }}
                                     @if($rule->time_period === 'temporary' && $rule->time_period_start_date)
@@ -478,5 +502,44 @@
         if (dateModalInstance) dateModalInstance.hide();
         else $('#dateRangeModal').modal('hide');
     });
+
+    // Select2 and City Filter Logic
+    if (typeof $ !== 'undefined') {
+        $(document).ready(function() {
+            if($.fn.select2) {
+                $('#selectedCitiesSelect').select2({
+                    placeholder: "Select cities...",
+                    allowClear: true
+                });
+            }
+            
+            $('#cityFilterSelect').on('change', function() {
+                let tier = $(this).val();
+                if (tier === 'tier_1' || tier === 'tier_2' || tier === 'tier_3') {
+                    $('#selectedCitiesWrapper').show();
+                    
+                    // Fetch cities via AJAX
+                    $.ajax({
+                        url: '{{ route("admin.bulk_registration.cities_by_tier") }}',
+                        type: 'GET',
+                        data: { tier: tier },
+                        success: function(response) {
+                            if (response.success) {
+                                let options = '';
+                                response.cities.forEach(function(city) {
+                                    options += `<option value="${city.id}">${city.name}</option>`;
+                                });
+                                $('#selectedCitiesSelect').html(options);
+                            }
+                        }
+                    });
+                } else {
+                    $('#selectedCitiesWrapper').hide();
+                    $('#selectedCitiesSelect').html('');
+                }
+            });
+        });
+    }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 @endsection

@@ -33,6 +33,7 @@ class BulkRegistrationController extends Controller
             'time_period' => 'required|string',
             'time_period_start_date' => 'nullable|date',
             'time_period_end_date' => 'nullable|date',
+            'selected_cities' => 'nullable|array',
         ]);
 
         $rule = \App\Models\BulkPricingRule::create([
@@ -46,6 +47,7 @@ class BulkRegistrationController extends Controller
             'apply_from_date' => $validated['apply_from_date'] ?? null,
             'apply_to_date' => $validated['apply_to_date'] ?? null,
             'city_filter' => $validated['city_filter'] ?? 'current',
+            'selected_cities' => $validated['selected_cities'] ?? null,
             'time_period' => $validated['time_period'],
             'time_period_start_date' => $validated['time_period_start_date'] ?? null,
             'time_period_end_date' => $validated['time_period_end_date'] ?? null,
@@ -57,5 +59,16 @@ class BulkRegistrationController extends Controller
         }
 
         return redirect()->back()->with('success', 'Bulk pricing rule has been created successfully!');
+    }
+
+    public function getCitiesByTier(Request $request)
+    {
+        $tierFilter = $request->query('tier');
+        if (in_array($tierFilter, ['tier_1', 'tier_2', 'tier_3'])) {
+            $tierName = ucfirst(str_replace('_', ' ', $tierFilter));
+            $cities = \App\Models\Location::where('tier', $tierName)->orderBy('name')->get(['id', 'name']);
+            return response()->json(['success' => true, 'cities' => $cities]);
+        }
+        return response()->json(['success' => false, 'cities' => []]);
     }
 }
