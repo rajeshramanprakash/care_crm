@@ -150,46 +150,110 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
         });
     }
 
-    private function applyToVendors()
+        private function applyToVendors()
     {
-        $query = VendorServicePrice::query();
-        
-        if ($this->rule->service_id) {
-            $query->where('service_id', $this->rule->service_id);
-        }
-        if ($this->rule->sub_service_id) {
-            $query->where('service_sub_service_id', $this->rule->sub_service_id);
-        }
-
-        $locationIds = $this->getCityFilterLocationIds();
-        if ($locationIds !== null) {
-            $query->whereHas('vendor', function($q) use ($locationIds) {
-                $q->whereIn('location_id', $locationIds);
-            });
-        }
-
-        $query->chunk(200, function ($prices) {
-            foreach ($prices as $priceRecord) {
-                $mode = $this->rule->mode_type;
+        $vendors = \App\Models\Vendor::where('status', 'active')->get();
+        foreach ($vendors as $vendor) {
+            $blocks = \App\Services\VendorServiceSync::blocksForVendor($vendor);
+            foreach ($blocks as $block) {
+                $serviceId = (int) ($block['service_id'] ?? 0);
+                if ($this->rule->service_id && $serviceId !== (int)$this->rule->service_id) continue;
                 
-                if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
-                    $priceRecord->price_12hr = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);
-                }
-                
-                if (empty($mode) || $mode === '24_hours' || $mode === 'both') {
-                    $priceRecord->price_24hr = $this->calculateNewPrice($priceRecord->price_24hr, $this->rule->change_type, $this->rule->value);
+                $subServices = $block['sub_services'] ?? [];
+                $subIds = [0];
+                foreach ($subServices as $s) {
+                    if (isset($s['sub_service_id'])) { $subIds[] = (int)$s['sub_service_id']; } elseif (isset($s['id'])) { $subIds[] = (int)$s['id']; }
                 }
 
-                if (empty($mode) || $mode === 'one_time') {
-                    $priceRecord->price_onetime = $this->calculateNewPrice($priceRecord->price_onetime, $this->rule->change_type, $this->rule->value);
+                foreach ($subIds as $subId) {
+                    if ($this->rule->sub_service_id && $subId !== (int)$this->rule->sub_service_id) continue;
+                    
+                    $cityMatch = false;
+                    $filter = $this->rule->city_filter;
+                    $locationIds = $this->getCityFilterLocationIds();
+                    
+                    if ($filter === 'all' || empty($filter) || $filter === 'current') {
+                        $cityMatch = true;
+                    } else if ($locationIds !== null) {
+                        if ($vendor->location_id && in_array($vendor->location_id, $locationIds)) {
+                            $cityMatch = true;
+                        } else {
+                            $shifts = is_string($vendor->service_city_shifts) ? json_decode($vendor->service_city_shifts, true) : $vendor->service_city_shifts;
+                            if (is_array($shifts)) {
+                                foreach ($shifts as $shiftData) {
+                                    if (isset($shiftData['cities']) && is_array($shiftData['cities'])) {
+                                        foreach ($shiftData['cities'] as $cityInfo) {
+                                            if (in_array((int)($cityInfo['city_id'] ?? 0), $locationIds)) {
+                                                $cityMatch = true;
+                                                break 3;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!$cityMatch) continue;
+
+                    $current = \App\Services\VendorServiceSync::resolvePrice($vendor, $serviceId, $subId);
+                    
+                    $price12 = $current['price_12hr'];
+                    $price24 = $current['price_24hr'];
+                    $priceOne = $current['price_onetime'];
+                    $mode = $this->rule->mode_type;
+                    $updated = false;
+
+                    if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
+                        if ($price12 !== null) {
+                            $newPrice = $this->calculateNewPrice($price12, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $price12) { $price12 = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $price12 = $this->rule->value; $updated = true;
+                        }
+                    }
+                    if (empty($mode) || $mode === '24_hours' || $mode === 'both') {
+                        if ($price24 !== null) {
+                            $newPrice = $this->calculateNewPrice($price24, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $price24) { $price24 = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $price24 = $this->rule->value; $updated = true;
+                        }
+                    }
+                    if (empty($mode) || $mode === 'one_time') {
+                        if ($priceOne !== null) {
+                            $newPrice = $this->calculateNewPrice($priceOne, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $priceOne) { $priceOne = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $priceOne = $this->rule->value; $updated = true;
+                        }
+                    }
+
+                    if ($updated) {
+                        $vsp = \App\Models\VendorServicePrice::firstOrNew(
+                            ['vendor_id' => $vendor->id, 'service_id' => $serviceId, 'service_sub_service_id' => $subId]
+                        );
+
+                        if ($this->rule->time_period === 'temporary') {
+                            if (!$vsp->exists || $vsp->original_price_12hr === null) $vsp->original_price_12hr = $vsp->price_12hr;
+                            if (!$vsp->exists || $vsp->original_price_24hr === null) $vsp->original_price_24hr = $vsp->price_24hr;
+                            if (!$vsp->exists || $vsp->original_price_onetime === null) $vsp->original_price_onetime = $vsp->price_onetime;
+                        } else {
+                            $vsp->original_price_12hr = null;
+                            $vsp->original_price_24hr = null;
+                            $vsp->original_price_onetime = null;
+                        }
+
+                        $vsp->price_12hr = $price12;
+                        $vsp->price_24hr = $price24;
+                        $vsp->price_onetime = $priceOne;
+                        $vsp->save();
+                    }
                 }
-                
-                $priceRecord->save();
             }
-        });
+        }
     }
-
-    private function applyToDoctorsPayout()
+private function applyToDoctorsPayout()
     {
         $query = LocationDoctorConsultationPrice::query();
         
@@ -262,6 +326,10 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
                         $newPrice = $this->calculateNewPrice($oldPrice, $this->rule->change_type, $this->rule->value);
 
                         if ($oldPrice != $newPrice) {
+                            if ($this->rule->time_period === 'temporary') {
+                                $originalCol = 'original_' . $columnName;
+                                $doctor->{$originalCol} = $oldPrice;
+                            }
                             $doctor->{$columnName} = $newPrice;
                             $updated = true;
 
@@ -299,6 +367,9 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
                                     $newPrice = $this->calculateNewPrice($oldPrice, $this->rule->change_type, $this->rule->value);
 
                                     if ($oldPrice != $newPrice) {
+                                        if ($this->rule->time_period === 'temporary') {
+                                            $pricingRow['modes'][$mode]['original_doctor_price'] = $oldPrice;
+                                        }
                                         $pricingRow['modes'][$mode]['doctor_price'] = $newPrice;
                                         $jsonUpdated = true;
 
@@ -350,6 +421,10 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
 
         $query->chunk(200, function ($prices) {
             foreach ($prices as $priceRecord) {
+                if ($this->rule->time_period === 'temporary') {
+                    $priceRecord->original_website_price = $priceRecord->website_price;
+                    $priceRecord->original_doctor_max_price = $priceRecord->doctor_max_price;
+                }
                 $priceRecord->website_price = $this->calculateNewPrice($priceRecord->website_price, $this->rule->change_type, $this->rule->value);
                 $priceRecord->save();
             }
@@ -401,6 +476,10 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
                         $newPrice = $this->calculateNewPrice($oldPrice, $this->rule->change_type, $this->rule->value);
 
                         if ($oldPrice != $newPrice) {
+                            if ($this->rule->time_period === 'temporary') {
+                                $originalCol = 'original_' . $columnName;
+                                $doctor->{$originalCol} = $oldPrice;
+                            }
                             $doctor->{$columnName} = $newPrice;
                             $updated = true;
 
@@ -438,6 +517,9 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
                                     $newPrice = $this->calculateNewPrice($oldPrice, $this->rule->change_type, $this->rule->value);
 
                                     if ($oldPrice != $newPrice) {
+                                        if ($this->rule->time_period === 'temporary') {
+                                            $pricingRow['modes'][$mode]['original_website_price'] = $oldPrice;
+                                        }
                                         $pricingRow['modes'][$mode]['website_price'] = $newPrice;
                                         $jsonUpdated = true;
 
@@ -467,48 +549,96 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
         });
     }
 
-    private function applyToFreelancers()
+        private function applyToFreelancers()
     {
-        $query = JobRequestServicePrice::query();
-        
-        if ($this->rule->service_id) {
-            $query->where('service_id', $this->rule->service_id);
-        }
-        if ($this->rule->sub_service_id) {
-            $query->where('service_sub_service_id', $this->rule->sub_service_id);
-        }
-
-        $locationIds = $this->getCityFilterLocationIds();
-        if ($locationIds !== null) {
-            $query->whereHas('jobRequest', function($q) use ($locationIds) {
-                $q->whereIn('location_id', $locationIds);
-            });
-        }
-
-        $query->chunk(200, function ($prices) {
-            foreach ($prices as $priceRecord) {
-                $mode = $this->rule->mode_type;
+        $jobRequests = \App\Models\JobRequest::where('status', 'active')->get();
+        foreach ($jobRequests as $jobReq) {
+            // Simplified freelancer logic since JobRequest structure might vary.
+            // Using existing JobRequestServicePrice logic but fallback to default if missing.
+            
+            $blocks = \App\Services\FreelancerServiceSync::blocksForFreelancer($jobReq);
+            foreach ($blocks as $block) {
+                $serviceId = (int) ($block['service_id'] ?? 0);
+                if ($this->rule->service_id && $serviceId !== (int)$this->rule->service_id) continue;
                 
-                if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
-                    if (isset($priceRecord->price_12hr)) {
-                        $priceRecord->price_12hr = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);
-                    }
-                }
-                
-                if (empty($mode) || $mode === '24_hours' || $mode === 'both') {
-                    if (isset($priceRecord->price_24hr)) {
-                        $priceRecord->price_24hr = $this->calculateNewPrice($priceRecord->price_24hr, $this->rule->change_type, $this->rule->value);
-                    }
+                $subServices = $block['sub_services'] ?? [];
+                $subIds = [0];
+                foreach ($subServices as $s) {
+                    if (isset($s['sub_service_id'])) { $subIds[] = (int)$s['sub_service_id']; } elseif (isset($s['id'])) { $subIds[] = (int)$s['id']; }
                 }
 
-                if (empty($mode) || $mode === 'one_time') {
-                    if (isset($priceRecord->price_onetime)) {
-                        $priceRecord->price_onetime = $this->calculateNewPrice($priceRecord->price_onetime, $this->rule->change_type, $this->rule->value);
+                foreach ($subIds as $subId) {
+                    if ($this->rule->sub_service_id && $subId !== (int)$this->rule->sub_service_id) continue;
+                    
+                    $cityMatch = false;
+                    $filter = $this->rule->city_filter;
+                    $locationIds = $this->getCityFilterLocationIds();
+                    
+                    if ($filter === 'all' || empty($filter) || $filter === 'current') {
+                        $cityMatch = true;
+                    } else if ($locationIds !== null) {
+                        if ($jobReq->location_id && in_array($jobReq->location_id, $locationIds)) {
+                            $cityMatch = true;
+                        }
+                    }
+
+                    if (!$cityMatch) continue;
+
+                    $current = \App\Services\FreelancerServiceSync::resolvePrice($jobReq, $serviceId, $subId);
+                    
+                    $price12 = $current['price_12hr'];
+                    $price24 = $current['price_24hr'];
+                    $priceOne = $current['price_onetime'];
+                    $mode = $this->rule->mode_type;
+                    $updated = false;
+
+                    if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
+                        if ($price12 !== null) {
+                            $newPrice = $this->calculateNewPrice($price12, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $price12) { $price12 = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $price12 = $this->rule->value; $updated = true;
+                        }
+                    }
+                    if (empty($mode) || $mode === '24_hours' || $mode === 'both') {
+                        if ($price24 !== null) {
+                            $newPrice = $this->calculateNewPrice($price24, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $price24) { $price24 = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $price24 = $this->rule->value; $updated = true;
+                        }
+                    }
+                    if (empty($mode) || $mode === 'one_time') {
+                        if ($priceOne !== null) {
+                            $newPrice = $this->calculateNewPrice($priceOne, $this->rule->change_type, $this->rule->value);
+                            if ($newPrice != $priceOne) { $priceOne = $newPrice; $updated = true; }
+                        } else if ($this->rule->change_type === 'normal') {
+                            $priceOne = $this->rule->value; $updated = true;
+                        }
+                    }
+
+                    if ($updated) {
+                        $jsp = \App\Models\JobRequestServicePrice::firstOrNew(
+                            ['job_request_id' => $jobReq->id, 'service_id' => $serviceId, 'service_sub_service_id' => $subId]
+                        );
+
+                        if ($this->rule->time_period === 'temporary') {
+                            if (!$jsp->exists || $jsp->original_price_12hr === null) $jsp->original_price_12hr = $jsp->price_12hr;
+                            if (!$jsp->exists || $jsp->original_price_24hr === null) $jsp->original_price_24hr = $jsp->price_24hr;
+                            if (!$jsp->exists || $jsp->original_price_onetime === null) $jsp->original_price_onetime = $jsp->price_onetime;
+                        } else {
+                            $jsp->original_price_12hr = null;
+                            $jsp->original_price_24hr = null;
+                            $jsp->original_price_onetime = null;
+                        }
+
+                        $jsp->price_12hr = $price12;
+                        $jsp->price_24hr = $price24;
+                        $jsp->price_onetime = $priceOne;
+                        $jsp->save();
                     }
                 }
-                
-                $priceRecord->save();
             }
-        });
+        }
     }
 }

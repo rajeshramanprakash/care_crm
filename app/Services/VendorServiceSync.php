@@ -367,7 +367,7 @@ class VendorServiceSync
     {
         $stored = $vendor->vendor_services;
         if (is_array($stored) && $stored !== []) {
-            return self::normalizeBlocks($stored);
+            $blocks = self::normalizeBlocks($stored); return self::mergeServicePricesIntoBlocks($vendor, $blocks);
         }
 
         $legacy = $vendor->service_city_shifts;
@@ -418,5 +418,49 @@ class VendorServiceSync
         }
 
         return (string) $value;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $blocks
+     * @return list<array<string, mixed>>
+     */
+    private static function mergeServicePricesIntoBlocks(Vendor $vendor, array $blocks): array
+    {
+        $overrides = \App\Models\VendorServicePrice::query()
+            ->where('vendor_id', $vendor->id)
+            ->get()
+            ->groupBy('service_id');
+
+        foreach ($blocks as &$block) {
+            $serviceId = (int)($block['service_id'] ?? 0);
+            if (!isset($overrides[$serviceId])) continue;
+
+            $serviceOverrides = $overrides[$serviceId]->keyBy('service_sub_service_id');
+            $mergedOverrides = [];
+            
+            // Collect all sub-services from the block
+            $subIds = [0]; // Main service
+            foreach ($block['sub_services'] ?? [] as $sub) {
+                if (isset($sub['sub_service_id'])) {
+                    $subIds[] = (int)$sub['sub_service_id'];
+                }
+            }
+
+            foreach ($subIds as $subId) {
+                if (isset($serviceOverrides[$subId])) {
+                    $row = $serviceOverrides[$subId];
+                    $mergedOverrides[] = [
+                        'service_sub_service_id' => $subId,
+                        'price_12hr' => $row->price_12hr,
+                        'price_24hr' => $row->price_24hr,
+                        'price_onetime' => $row->price_onetime,
+                    ];
+                }
+            }
+
+            $block['price_overrides'] = $mergedOverrides;
+        }
+
+        return $blocks;
     }
 }

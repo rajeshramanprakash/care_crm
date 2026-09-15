@@ -68,8 +68,140 @@ class RevertTemporaryPricingCommand extends Command
                     break;
             }
 
-            // Run the job synchronously to revert
-            ApplyBulkPricingRuleJob::dispatchSync($invertedRule);
+            if (in_array($rule->pricing_type, ['vendor', 'freelancer'])) {
+                if ($rule->pricing_type === 'vendor') {
+                    $q = \App\Models\VendorServicePrice::query();
+                    if ($rule->service_id) $q->where('service_id', $rule->service_id);
+                    if ($rule->sub_service_id) $q->where('service_sub_service_id', $rule->sub_service_id);
+                    
+                    $q->chunkById(100, function ($prices) {
+                        foreach ($prices as $p) {
+                            $updated = false;
+                            if ($p->original_price_12hr !== null) { $p->price_12hr = $p->original_price_12hr; $p->original_price_12hr = null; $updated = true; }
+                            if ($p->original_price_24hr !== null) { $p->price_24hr = $p->original_price_24hr; $p->original_price_24hr = null; $updated = true; }
+                            if ($p->original_price_onetime !== null) { $p->price_onetime = $p->original_price_onetime; $p->original_price_onetime = null; $updated = true; }
+                            if ($updated) $p->save();
+                        }
+                    });
+                } else if ($rule->pricing_type === 'freelancer') {
+                    $q = \App\Models\JobRequestServicePrice::query();
+                    if ($rule->service_id) $q->where('service_id', $rule->service_id);
+                    if ($rule->sub_service_id) $q->where('service_sub_service_id', $rule->sub_service_id);
+                    
+                    $q->chunkById(100, function ($prices) {
+                        foreach ($prices as $p) {
+                            $updated = false;
+                            if ($p->original_price_12hr !== null) { $p->price_12hr = $p->original_price_12hr; $p->original_price_12hr = null; $updated = true; }
+                            if ($p->original_price_24hr !== null) { $p->price_24hr = $p->original_price_24hr; $p->original_price_24hr = null; $updated = true; }
+                            if ($p->original_price_onetime !== null) { $p->price_onetime = $p->original_price_onetime; $p->original_price_onetime = null; $updated = true; }
+                            if ($updated) $p->save();
+                        }
+                    });
+                }
+            } else if ($rule->pricing_type === 'website_doctor') {
+                $q = \App\Models\LocationDoctorConsultationPrice::query();
+                if ($rule->service_id) $q->where('doctor_consultation_service_id', $rule->service_id);
+                if ($rule->sub_service_id) $q->where('doctor_consultation_service_sub_service_id', $rule->sub_service_id);
+                
+                $q->chunkById(100, function ($prices) {
+                    foreach ($prices as $p) {
+                        $updated = false;
+                        if ($p->original_website_price !== null) { $p->website_price = $p->original_website_price; $p->original_website_price = null; $updated = true; }
+                        if ($p->original_doctor_max_price !== null) { $p->doctor_max_price = $p->original_doctor_max_price; $p->original_doctor_max_price = null; $updated = true; }
+                        if ($updated) $p->save();
+                    }
+                });
+
+                $docQ = \App\Models\DoctorRequest::query()->where('approval_status', 'Approved');
+                if ($rule->service_id) {
+                    $docSvc = \App\Models\DoctorConsultationService::find($rule->service_id);
+                    if ($docSvc) $docQ->where('job_title', $docSvc->name);
+                }
+                $docQ->chunkById(100, function ($doctors) {
+                    foreach ($doctors as $d) {
+                        $updated = false;
+                        $cols = [
+                            'website_customer_fee_online',
+                            'website_customer_fee_home_visit',
+                            'website_customer_fee_clinic'
+                        ];
+                        foreach ($cols as $c) {
+                            $origCol = 'original_' . $c;
+                            if ($d->{$origCol} !== null) {
+                                $d->{$c} = $d->{$origCol};
+                                $d->{$origCol} = null;
+                                $updated = true;
+                            }
+                        }
+                        
+                        $pricingArr = $d->consultation_pricing;
+                        if (is_array($pricingArr)) {
+                            $jsonUpdated = false;
+                            foreach ($pricingArr as &$row) {
+                                if (isset($row['modes']) && is_array($row['modes'])) {
+                                    foreach (['online', 'home_visit', 'clinic_visit'] as $m) {
+                                        if (isset($row['modes'][$m]['original_website_price'])) {
+                                            $row['modes'][$m]['website_price'] = $row['modes'][$m]['original_website_price'];
+                                            unset($row['modes'][$m]['original_website_price']);
+                                            $jsonUpdated = true;
+                                        }
+                                    }
+                                }
+                            }
+                            if ($jsonUpdated) {
+                                $d->consultation_pricing = $pricingArr;
+                                $updated = true;
+                            }
+                        }
+                        if ($updated) $d->save();
+                    }
+                });
+            } else if ($rule->pricing_type === 'doctor_payout') {
+                $docQ = \App\Models\DoctorRequest::query()->where('approval_status', 'Approved');
+                if ($rule->service_id) {
+                    $docSvc = \App\Models\DoctorConsultationService::find($rule->service_id);
+                    if ($docSvc) $docQ->where('job_title', $docSvc->name);
+                }
+                $docQ->chunkById(100, function ($doctors) {
+                    foreach ($doctors as $d) {
+                        $updated = false;
+                        $cols = [
+                            'online_charges',
+                            'home_visit_charges',
+                            'clinic_consultation_charges'
+                        ];
+                        foreach ($cols as $c) {
+                            $origCol = 'original_' . $c;
+                            if ($d->{$origCol} !== null) {
+                                $d->{$c} = $d->{$origCol};
+                                $d->{$origCol} = null;
+                                $updated = true;
+                            }
+                        }
+                        
+                        $pricingArr = $d->consultation_pricing;
+                        if (is_array($pricingArr)) {
+                            $jsonUpdated = false;
+                            foreach ($pricingArr as &$row) {
+                                if (isset($row['modes']) && is_array($row['modes'])) {
+                                    foreach (['online', 'home_visit', 'clinic_visit'] as $m) {
+                                        if (isset($row['modes'][$m]['original_doctor_price'])) {
+                                            $row['modes'][$m]['doctor_price'] = $row['modes'][$m]['original_doctor_price'];
+                                            unset($row['modes'][$m]['original_doctor_price']);
+                                            $jsonUpdated = true;
+                                        }
+                                    }
+                                }
+                            }
+                            if ($jsonUpdated) {
+                                $d->consultation_pricing = $pricingArr;
+                                $updated = true;
+                            }
+                        }
+                        if ($updated) $d->save();
+                    }
+                });
+            }
 
             // Mark rule as inactive
             $rule->update(['status' => 0]);

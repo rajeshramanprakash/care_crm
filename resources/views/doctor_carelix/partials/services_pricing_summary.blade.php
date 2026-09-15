@@ -244,8 +244,37 @@
                                                 $isActive = $now->gte($start) && (!$end || $now->lte($end));
                                                 $isFuture = $now->lt($start);
                                             }
+                                            
+                                            $currentDoctorPrice = $prices['doctor'];
+                                            if ($tempRule && $tempRule->pricing_type === 'doctor_payout') {
+                                                if ((int)$subId === 0) {
+                                                    $colMap = [
+                                                        'online' => 'online_charges',
+                                                        'home_visit' => 'home_visit_charges',
+                                                        'clinic_visit' => 'clinic_consultation_charges'
+                                                    ];
+                                                    if (isset($colMap[$modeKey])) {
+                                                        $origCol = 'original_' . $colMap[$modeKey];
+                                                        if (isset($doctor->{$origCol}) && $doctor->{$origCol} !== null) {
+                                                            $currentDoctorPrice = $doctor->{$origCol};
+                                                        }
+                                                    }
+                                                } else {
+                                                    $pricingArr = $doctor->consultation_pricing;
+                                                    if (is_array($pricingArr)) {
+                                                        foreach ($pricingArr as $row) {
+                                                            if ((int)($row['sub_service_id'] ?? 0) === (int)$subId) {
+                                                                if (isset($row['modes'][$modeKey]['original_doctor_price'])) {
+                                                                    $currentDoctorPrice = $row['modes'][$modeKey]['original_doctor_price'];
+                                                                }
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         @endphp
-                                        <td><strong>{{ $fmtPrice($prices['doctor']) }}</strong></td>
+                                        <td><strong>{{ $fmtPrice($currentDoctorPrice) }}</strong></td>
                                         <td>
                                             @if($tempRule && ($isActive || $isFuture))
                                                 @php
@@ -254,10 +283,12 @@
                                                         $displayPrice = $tempRule->value; // fallback if it hasn't run yet or is 0
                                                     }
                                                 @endphp
-                                                <strong class="{{ $isActive ? 'text-success' : 'text-danger' }}">{{ $fmtPrice($displayPrice) }}</strong>
-                                                <div class="mt-1 text-muted" style="font-size: 0.7rem; line-height: 1.2;">
-                                                    From: {{ $start->format('d M Y, h:i A') }}<br>
-                                                    To: {{ $end ? $end->format('d M Y, h:i A') : 'Ongoing' }}
+                                                <div class="dr-temp-badge {{ $isActive ? 'dr-temp-badge--active' : 'dr-temp-badge--future' }}">
+                                                    <strong>{{ $fmtPrice($displayPrice) }}</strong>
+                                                    <small class="d-block text-muted">
+                                                        From: {{ $start->format('d M, y, h:i A') }}<br>
+                                                        To: {{ $end ? $end->format('d M, y, h:i A') : 'Ongoing' }}
+                                                    </small>
                                                 </div>
                                             @else
                                                 <span class="text-muted">—</span>
@@ -447,6 +478,12 @@
         background: #fee2e2;
         color: #991b1b;
     }
+    .dr-temp-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 6px; }
+    .dr-temp-badge--future { background: #fff5f5; border: 1px solid #fed7d7; }
+    .dr-temp-badge--future strong { color: #c53030; font-size: 0.95rem; }
+    .dr-temp-badge--active { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .dr-temp-badge--active strong { color: #166534; font-size: 0.95rem; }
+    .dr-temp-badge small { font-size: 0.7rem; margin-top: 2px; }
 </style>
 
 @push('scripts')
