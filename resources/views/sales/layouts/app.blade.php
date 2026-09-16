@@ -435,7 +435,7 @@
 
 </style>
 
-<body class="sidebar-mini layout-fixed" style="overflow: hidden">
+<body class="sidebar-mini layout-fixed">
     @include('includes.preloader')
     @include('sales.layouts.navbar')
     @include('sales.layouts.sidebar')
