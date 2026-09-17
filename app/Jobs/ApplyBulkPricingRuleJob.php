@@ -66,11 +66,11 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
             case 'normal':
                 return max(0, $value);
             case 'increase_fixed':
-                return max($currentPrice, $value);
+                return $currentPrice + $value;
             case 'increase_percent':
                 return max(0, $currentPrice + ($currentPrice * ($value / 100)));
             case 'decrease_fixed':
-                return min($currentPrice, $value);
+                return max(0, $currentPrice - $value);
             case 'decrease_percent':
                 return max(0, $currentPrice - ($currentPrice * ($value / 100)));
             case 'revert_increase_percent':
@@ -128,19 +128,33 @@ class ApplyBulkPricingRuleJob implements ShouldQueue
         $query->orderBy('id')->chunk(200, function ($prices) {
             foreach ($prices as $priceRecord) {
                 $updateData = [];
-                
-                if (isset($priceRecord->price_12hr)) {
-                    $updateData['price_12hr'] = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);
+                $mode = $this->rule->mode_type;
+                if (empty($mode) || $mode === '12_hours' || $mode === 'both') {
+                    if (isset($priceRecord->price_12hr)) {
+                        $updateData['price_12hr'] = $this->calculateNewPrice($priceRecord->price_12hr, $this->rule->change_type, $this->rule->value);
+                        if ($this->rule->time_period === 'temporary' && $updateData['price_12hr'] != $priceRecord->price_12hr) {
+                            $updateData['original_price_12hr'] = $priceRecord->price_12hr;
+                        }
+                    }
                 }
                 
-                if (isset($priceRecord->price_24hr)) {
-                    $updateData['price_24hr'] = $this->calculateNewPrice($priceRecord->price_24hr, $this->rule->change_type, $this->rule->value);
+                if (empty($mode) || $mode === '24_hours' || $mode === 'both') {
+                    if (isset($priceRecord->price_24hr)) {
+                        $updateData['price_24hr'] = $this->calculateNewPrice($priceRecord->price_24hr, $this->rule->change_type, $this->rule->value);
+                        if ($this->rule->time_period === 'temporary' && $updateData['price_24hr'] != $priceRecord->price_24hr) {
+                            $updateData['original_price_24hr'] = $priceRecord->price_24hr;
+                        }
+                    }
                 }
 
-                if (isset($priceRecord->price_onetime)) {
-                    $updateData['price_onetime'] = $this->calculateNewPrice($priceRecord->price_onetime, $this->rule->change_type, $this->rule->value);
+                if (empty($mode) || $mode === 'one_time') {
+                    if (isset($priceRecord->price_onetime)) {
+                        $updateData['price_onetime'] = $this->calculateNewPrice($priceRecord->price_onetime, $this->rule->change_type, $this->rule->value);
+                        if ($this->rule->time_period === 'temporary' && $updateData['price_onetime'] != $priceRecord->price_onetime) {
+                            $updateData['original_price_onetime'] = $priceRecord->price_onetime;
+                        }
+                    }
                 }
-                
                 if (!empty($updateData)) {
                     \Illuminate\Support\Facades\DB::table('location_services')
                         ->where('id', $priceRecord->id)
@@ -265,7 +279,13 @@ private function applyToDoctorsPayout()
         }
         
         if ($this->rule->mode_type) {
-            $query->where('consultation_mode', $this->rule->mode_type);
+            $normalizedMode = match (strtolower(trim($this->rule->mode_type))) {
+                'online' => 'online',
+                'home visit' => 'home_visit',
+                'clinic' => 'clinic_visit',
+                default => strtolower(str_replace(' ', '_', trim($this->rule->mode_type)))
+            };
+            $query->where('consultation_mode', $normalizedMode);
         }
 
         $locationIds = $this->getCityFilterLocationIds();
@@ -411,7 +431,13 @@ private function applyToDoctorsPayout()
         }
         
         if ($this->rule->mode_type) {
-            $query->where('consultation_mode', $this->rule->mode_type);
+            $normalizedMode = match (strtolower(trim($this->rule->mode_type))) {
+                'online' => 'online',
+                'home visit' => 'home_visit',
+                'clinic' => 'clinic_visit',
+                default => strtolower(str_replace(' ', '_', trim($this->rule->mode_type)))
+            };
+            $query->where('consultation_mode', $normalizedMode);
         }
 
         $locationIds = $this->getCityFilterLocationIds();

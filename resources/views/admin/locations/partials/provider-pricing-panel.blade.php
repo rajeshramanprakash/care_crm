@@ -22,6 +22,9 @@
                 'price12' => $row['price_12hr'] ?? null,
                 'price24' => $row['price_24hr'] ?? null,
                 'priceOnetime' => $row['price_onetime'] ?? null,
+                'origPrice12' => $row['original_price_12hr'] ?? null,
+                'origPrice24' => $row['original_price_24hr'] ?? null,
+                'origPriceOnetime' => $row['original_price_onetime'] ?? null,
                 'showRemove' => count($rows) > 1,
             ])
         @endforeach

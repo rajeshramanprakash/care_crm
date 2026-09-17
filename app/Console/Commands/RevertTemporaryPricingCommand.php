@@ -201,6 +201,31 @@ class RevertTemporaryPricingCommand extends Command
                         if ($updated) $d->save();
                     }
                 });
+            } else if ($rule->pricing_type === 'website_general') {
+                $q = \Illuminate\Support\Facades\DB::table('location_services');
+                if ($rule->service_id) $q->where('service_id', $rule->service_id);
+                if ($rule->sub_service_id) $q->where('service_sub_service_id', $rule->sub_service_id);
+                
+                $q->orderBy('id')->chunk(200, function ($prices) {
+                    foreach ($prices as $p) {
+                        $updateData = [];
+                        if (isset($p->original_price_12hr)) {
+                            $updateData['price_12hr'] = $p->original_price_12hr;
+                            $updateData['original_price_12hr'] = null;
+                        }
+                        if (isset($p->original_price_24hr)) {
+                            $updateData['price_24hr'] = $p->original_price_24hr;
+                            $updateData['original_price_24hr'] = null;
+                        }
+                        if (isset($p->original_price_onetime)) {
+                            $updateData['price_onetime'] = $p->original_price_onetime;
+                            $updateData['original_price_onetime'] = null;
+                        }
+                        if (!empty($updateData)) {
+                            \Illuminate\Support\Facades\DB::table('location_services')->where('id', $p->id)->update($updateData);
+                        }
+                    }
+                });
             }
 
             // Mark rule as inactive

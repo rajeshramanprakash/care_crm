@@ -84,6 +84,8 @@
                         $enabled = ! empty($modeOld['enabled']);
                         $webPrice = $modeOld['website_price'] ?? '';
                         $docMax = $modeOld['doctor_max_price'] ?? '';
+                        $origWebPrice = $modeOld['original_website_price'] ?? null;
+                        $origDocMax = $modeOld['original_doctor_max_price'] ?? null;
                     @endphp
                     <tr class="loc-mode-row {{ $enabled ? '' : 'd-none' }}" data-mode="{{ $modeKey }}">
                         <td class="font-weight-bold">{{ $modeLabel }}</td>
@@ -95,6 +97,12 @@
                                    name="{{ $prefix }}[modes][{{ $modeKey }}][website_price]"
                                    value="{{ $webPrice }}"
                                    placeholder="0.00">
+                            @if($origWebPrice !== null)
+                                <small class="text-warning d-block mt-1" style="line-height: 1.1;">
+                                    <i class="fas fa-exclamation-triangle"></i> Temp Active<br>
+                                    <span class="text-muted">Orig: ₹{{ $origWebPrice }}</span>
+                                </small>
+                            @endif
                         </td>
                         <td>
                             <input type="number"
@@ -104,6 +112,12 @@
                                    name="{{ $prefix }}[modes][{{ $modeKey }}][doctor_max_price]"
                                    value="{{ $docMax }}"
                                    placeholder="0.00">
+                            @if($origDocMax !== null)
+                                <small class="text-warning d-block mt-1" style="line-height: 1.1;">
+                                    <i class="fas fa-exclamation-triangle"></i> Temp Active<br>
+                                    <span class="text-muted">Orig: ₹{{ $origDocMax }}</span>
+                                </small>
+                            @endif
                         </td>
                         <td class="loc-final-allowed">₹<span class="loc-final-val">{{ $docMax !== '' && $docMax !== null ? number_format((float) $docMax, 0) : '0' }}</span></td>
                         <td><span class="badge badge-success">Active</span></td>

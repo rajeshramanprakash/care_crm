@@ -280,6 +280,8 @@ class LocationController extends Controller
                     'enabled' => true,
                     'website_price' => $row->website_price,
                     'doctor_max_price' => $row->doctor_max_price,
+                    'original_website_price' => $row->original_website_price,
+                    'original_doctor_max_price' => $row->original_doctor_max_price,
                 ];
             }
             $blocks[] = [
@@ -448,6 +450,9 @@ class LocationController extends Controller
                 'price_12hr' => $service->pivot->price_12hr,
                 'price_24hr' => $service->pivot->price_24hr,
                 'price_onetime' => $service->pivot->price_onetime,
+                'original_price_12hr' => $service->pivot->original_price_12hr ?? null,
+                'original_price_24hr' => $service->pivot->original_price_24hr ?? null,
+                'original_price_onetime' => $service->pivot->original_price_onetime ?? null,
             ];
         }
 

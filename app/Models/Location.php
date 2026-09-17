@@ -33,7 +33,11 @@ class Location extends Model
     public function services()
     {
         return $this->belongsToMany(Service::class, 'location_services')
-            ->withPivot(['price_12hr', 'price_24hr', 'price_onetime', 'provider_type', 'service_sub_service_id'])
+            ->withPivot([
+                'price_12hr', 'price_24hr', 'price_onetime',
+                'original_price_12hr', 'original_price_24hr', 'original_price_onetime',
+                'provider_type', 'service_sub_service_id'
+            ])
             ->withTimestamps();
     }
 
