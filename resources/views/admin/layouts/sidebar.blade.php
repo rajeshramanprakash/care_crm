@@ -203,7 +203,7 @@ $route_name = Route::currentRouteName();
                                 </a>
                             </li>
                             @endcan
-                            @if(session('logged_role') == 1)
+                            @if(in_array(session('logged_role'), [1, 7]))
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.corporate-accounts.index') }}" class="nav-link {{ strpos($route_name, 'corporate-accounts') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -220,7 +220,7 @@ $route_name = Route::currentRouteName();
                         </ul>
                     </li>
                     @endcanany
-                    @if(session('logged_role') == 1)
+                    @if(in_array(session('logged_role'), [1, 7]))
                     <li class="nav-item">
                         <a href="{{route($rolePrefix . '.break_logs.index')}}" class="nav-link {{ strpos($route_name, 'break_logs') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-clock"></i>
@@ -270,7 +270,7 @@ $route_name = Route::currentRouteName();
                         </a>
                     </li>
                     @endif
-                    @if(session('logged_role') == 1)
+                    @if(in_array(session('logged_role'), [1, 7]))
                     @php
                         $doctor_sidebar_open = strpos($route_name, 'doctor_requests') !== false
                             || strpos($route_name, 'doctor_consultation_services') !== false
@@ -304,12 +304,14 @@ $route_name = Route::currentRouteName();
                                     <p>Doctor consultation services</p>
                                 </a>
                             </li>
+                            @if(session('logged_role') == 1)
                             <li class="nav-item">
                                 <a href="{{ route('admin.website_consultation_payments.index') }}" class="nav-link {{ strpos($route_name, 'website_consultation_payments') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Website consultation payments</p>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </li>
                     @php
@@ -326,6 +328,7 @@ $route_name = Route::currentRouteName();
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            @if(session('logged_role') == 1)
                             <li class="nav-item">
                                 <a href="{{ route('admin.chat.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.chat.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -347,6 +350,7 @@ $route_name = Route::currentRouteName();
                                     <p>Customer Chats</p>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </li>
                     <li class="nav-item">

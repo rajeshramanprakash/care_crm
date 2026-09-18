@@ -1164,6 +1164,8 @@
 @endsection
 
 @section('main')
+    @can('view_dashboard')
+    @can('view_dashboard')
     <div class="content-wrapper">
             <div class="container-fluid" >
             <!-- Dashboard Header -->
