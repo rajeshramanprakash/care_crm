@@ -1165,7 +1165,6 @@
 
 @section('main')
     @can('view_dashboard')
-    @can('view_dashboard')
     <div class="content-wrapper">
             <div class="container-fluid" >
             <!-- Dashboard Header -->
@@ -2967,6 +2966,18 @@
     </div>
 
     {{-- footer code --}}
+    @else
+        <div class="content-wrapper">
+        <div class="content">
+            <div class="container-fluid">
+                <div class="alert alert-info mt-4">
+                    <h5><i class="icon fas fa-info"></i> Welcome!</h5>
+                    You do not have permission to view the dashboard statistics. Please use the sidebar menu on the left to navigate to the modules you have access to.
+                </div>
+            </div>
+        </div>
+        </div>
+    @endcan
 @section('footer-script')
     <script>
         // Tab switching functionality

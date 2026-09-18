@@ -203,7 +203,7 @@ $route_name = Route::currentRouteName();
                                 </a>
                             </li>
                             @endcan
-                            @if(in_array(session('logged_role'), [1, 7]))
+                    @if(session('logged_role') == 1 || auth()->user()->can('view_b2b_corporate'))
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.corporate-accounts.index') }}" class="nav-link {{ strpos($route_name, 'corporate-accounts') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -220,19 +220,23 @@ $route_name = Route::currentRouteName();
                         </ul>
                     </li>
                     @endcanany
-                    @if(in_array(session('logged_role'), [1, 7]))
+                    @if(session('logged_role') == 1 || auth()->user()->can('view_break_logs'))
                     <li class="nav-item">
                         <a href="{{route($rolePrefix . '.break_logs.index')}}" class="nav-link {{ strpos($route_name, 'break_logs') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-clock"></i>
                             <p>Break Logs</p>
                         </a>
                     </li>
+                    @endif
+                    @if(session('logged_role') == 1 || auth()->user()->can('view_duty_logs'))
                     <li class="nav-item">
                         <a href="{{route($rolePrefix . '.duty_logs.index')}}" class="nav-link {{ strpos($route_name, 'duty_logs') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-user-check"></i>
                             <p>Duty Logs</p>
                         </a>
                     </li>
+                    @endif
+                    @if(session('logged_role') == 1 || auth()->user()->can('view_operation_leads'))
                     <li class="nav-item">
                         <a href="{{route($rolePrefix . '.operation_leads.index')}}" class="nav-link {{ strpos($route_name, 'operation_leads') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-briefcase-medical"></i>
@@ -270,7 +274,7 @@ $route_name = Route::currentRouteName();
                         </a>
                     </li>
                     @endif
-                    @if(in_array(session('logged_role'), [1, 7]))
+                    @if(session('logged_role') == 1 || auth()->user()->can('view_doctor_requests') || auth()->user()->can('view_chats') || auth()->user()->can('view_whatsapp') || auth()->user()->can('view_vendors') || auth()->user()->can('view_bulk_registration') || auth()->user()->can('view_technical_support'))
                     @php
                         $doctor_sidebar_open = strpos($route_name, 'doctor_requests') !== false
                             || strpos($route_name, 'doctor_consultation_services') !== false
