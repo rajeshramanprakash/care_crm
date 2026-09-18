@@ -11,6 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class ServiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_services');
+    }
+
     public function index()
     {
         $services = Service::query()

@@ -50,9 +50,11 @@
                     </p>
                 </div>
                 <div class="col-sm-6 text-sm-right">
+                    @can('create_payment')
                     <a href="{{ route($route_prefix.'.payments.create') }}" class="btn btn-primary" style="background:#F07F28;border-color:#F07F28;">
                         <i class="fas fa-plus mr-1"></i> New payment
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>

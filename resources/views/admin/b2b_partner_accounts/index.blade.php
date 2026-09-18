@@ -70,10 +70,12 @@
                     &nbsp;/&nbsp; {{ $is_corporate ? 'B2B Corporate' : 'Individual' }}
                 </p>
             </div>
+            @if( ($is_corporate && auth()->user()->can('create_b2b_corporate')) || (!$is_corporate && auth()->user()->can('create_b2b_individual')) )
             <button type="button" class="btn btn-warning bpa-toolbar btn-create text-dark" data-toggle="modal" data-target="#createPartnerModal" data-bs-toggle="modal" data-bs-target="#createPartnerModal">
                 <i class="fas fa-plus mr-1"></i>
                 {{ $is_corporate ? 'Create B2B Corporate User' : 'Create Individual Partner User' }}
             </button>
+            @endif
         </div>
     </section>
     <section class="content">
@@ -132,11 +134,15 @@
                                     <td class="text-nowrap small">{{ $item->created_at?->format('d M Y') }}</td>
                                     <td class="text-nowrap">
                                         <button type="button" class="btn btn-xs btn-info" data-toggle="modal" data-target="#viewPartner{{ $item->id }}" data-bs-toggle="modal" data-bs-target="#viewPartner{{ $item->id }}">View</button>
+                                        @if( ($is_corporate && auth()->user()->can('edit_b2b_corporate')) || (!$is_corporate && auth()->user()->can('edit_b2b_individual')) )
                                         <button type="button" class="btn btn-xs btn-primary" data-toggle="modal" data-target="#editPartner{{ $item->id }}" data-bs-toggle="modal" data-bs-target="#editPartner{{ $item->id }}">Edit</button>
+                                        @endif
+                                        @if( ($is_corporate && auth()->user()->can('delete_b2b_corporate')) || (!$is_corporate && auth()->user()->can('delete_b2b_individual')) )
                                         <form method="POST" action="{{ route($is_corporate ? 'admin.b2b_corporate.destroy' : 'admin.b2b_individual.destroy', $item) }}" class="d-inline" onsubmit="return confirm('Delete this partner account?');">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-xs btn-danger">Delete</button>
                                         </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

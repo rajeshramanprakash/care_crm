@@ -91,6 +91,22 @@
     .doctor-requests-page .dr-requests-main-card .card-body {
         padding-top: 0.85rem;
     }
+    .doctor-requests-page .dr-main-datatable-body .table-responsive {
+        max-height: calc(100vh - 290px);
+        overflow-y: auto;
+    }
+    .doctor-requests-page .dr-main-datatable-body .table-responsive::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+    .doctor-requests-page .dr-main-datatable-body .table-responsive::-webkit-scrollbar-thumb {
+        background: #c5cdd8;
+        border-radius: 4px;
+    }
+    .doctor-requests-page .dr-main-datatable-body .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
     .doctor-requests-page #doctor-requests-table_wrapper .dataTables_length,
     .doctor-requests-page #doctor-requests-table_wrapper .dataTables_filter {
         margin-bottom: 0.75rem;
@@ -114,8 +130,8 @@
     .doctor-requests-page #doctor-requests-table_wrapper .dataTables_scrollBody {
         background: #fff;
         overflow-x: auto !important;
-        overflow-y: visible !important;
-        max-height: none;
+        overflow-y: auto !important;
+        max-height: calc(100vh - 280px);
         -webkit-overflow-scrolling: touch;
     }
     .doctor-requests-page #doctor-requests-table_wrapper .dataTables_scrollBody::-webkit-scrollbar,
@@ -156,9 +172,12 @@
         vertical-align: middle;
         background: #fafbfc;
         white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
     .doctor-requests-page table.dataTable.doctor-requests-dt tbody td {
-        padding: 0.65rem 0.55rem !important;
+        padding: 0.01rem 0.55rem !important;
         vertical-align: middle;
         font-size: 0.875rem;
         color: #2c3e50;

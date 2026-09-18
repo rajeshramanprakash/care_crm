@@ -29,6 +29,11 @@ class OperationLeadController extends Controller
     use HandlesOperationLeadStatusRemarks;
     use ResolvesB2BCorporateOperationLeadForDisplay;
 
+    public function __construct()
+    {
+        $this->middleware('can:view_operation_leads');
+    }
+
     public function index()
     {
         // Check if this is an API request

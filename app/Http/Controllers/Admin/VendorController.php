@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Validator;
 
 class VendorController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_vendors');
+    }
+
     public function index()
     {
         if (request()->expectsJson()) {

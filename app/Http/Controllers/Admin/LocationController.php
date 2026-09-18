@@ -17,6 +17,11 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LocationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_locations');
+    }
+
     public function index()
     {
         $locations = Location::with('services')->latest()->get();

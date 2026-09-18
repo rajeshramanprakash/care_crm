@@ -531,7 +531,7 @@ class AuthController extends Controller
             if ($isAjax) {
                 return response()->json([
                     'success' => true,
-                    'redirect' => route('home')
+                    'redirect' => route('login.role.select.show')
                 ]);
             }
             
@@ -928,10 +928,34 @@ class AuthController extends Controller
             'Sales Manager' => 'manager.dashboard',
             'Operation Manager' => 'operation-manager.dashboard',
             'Operation' => 'operation.dashboard',
-            'B2B' => 'b2b.dashboard'
+            'B2B' => 'b2b.dashboard',
+            'Sub Admin' => 'subadmin.dashboard'
         ];
 
         return $routes[$role] ?? 'home';
+    }
+
+    public function showRoleSelect(Request $request)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('home')->with('error', 'Please login first');
+        }
+
+        $user = Auth::user();
+        $roleIdString = $user->role_id ?? '';
+        
+        $roles = array_filter(
+            array_map('trim', explode(',', $roleIdString)),
+            function($roleId) {
+                return !empty($roleId) && $roleId !== '0' && is_numeric($roleId);
+            }
+        );
+        
+        $roleIds = array_map('intval', $roles);
+        $roleNames = \App\Models\Role::whereIn('id', $roleIds)->pluck('name')->toArray();
+        $roleNames = array_filter($roleNames);
+
+        return view('role-select', ['roles' => $roleNames]);
     }
 
     public function selectRole(Request $request)
@@ -1017,7 +1041,8 @@ class AuthController extends Controller
             'Sales Manager' => 'manager.dashboard',
             'Operation Manager' => 'operation-manager.dashboard',
             'Operation' => 'operation.dashboard',
-            'B2B' => 'b2b.dashboard'
+            'B2B' => 'b2b.dashboard',
+            'Sub Admin' => 'subadmin.dashboard'
         ];
 
         if (!isset($routes[$role])) {

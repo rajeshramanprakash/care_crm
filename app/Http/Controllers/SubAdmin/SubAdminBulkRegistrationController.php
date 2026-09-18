@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Http\Controllers\SubAdmin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Service;
+use Illuminate\Http\Request;
+
+class SubAdminBulkRegistrationController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('can:view_bulk_registration');
+    }
+
+    public function index()
+    {
+        $services = Service::with('subServices')->get();
+        $doctorServices = \App\Models\DoctorConsultationService::with('subServices')->get();
+        // Also fetch active bulk rules to display
+        $activeRules = \App\Models\BulkPricingRule::with(['service', 'subService', 'doctorService', 'doctorSubService'])->where('status', 1)->get();
+        return view('subadmin.bulk_registration.index', compact('services', 'doctorServices', 'activeRules'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'pricing_type' => 'required|in:doctor_payout,vendor,freelancer,website_general,website_doctor',
+            'service_id' => 'nullable|integer',
+            'sub_service_id' => 'nullable|integer',
+            'mode_type' => 'nullable|string',
+            'change_type' => 'required|string',
+            'value' => 'required|numeric',
+            'apply_to' => 'required|string',
+            'apply_from_date' => 'nullable|date',
+            'apply_to_date' => 'nullable|date',
+            'city_filter' => 'nullable|string',
+            'time_period' => 'required|string',
+            'time_period_start_date' => 'nullable|date',
+            'time_period_end_date' => 'nullable|date',
+            'selected_cities' => 'nullable|array',
+        ]);
+
+        $rule = \App\Models\BulkPricingRule::create([
+            'pricing_type' => $validated['pricing_type'],
+            'service_id' => $validated['service_id'] ?? null,
+            'sub_service_id' => $validated['sub_service_id'] ?? null,
+            'mode_type' => $validated['mode_type'] ?? null,
+            'change_type' => $validated['change_type'],
+            'value' => $validated['value'],
+            'apply_to' => $validated['apply_to'],
+            'apply_from_date' => $validated['apply_from_date'] ?? null,
+            'apply_to_date' => $validated['apply_to_date'] ?? null,
+            'city_filter' => $validated['city_filter'] ?? 'current',
+            'selected_cities' => $validated['selected_cities'] ?? null,
+            'time_period' => $validated['time_period'],
+            'time_period_start_date' => $validated['time_period_start_date'] ?? null,
+            'time_period_end_date' => $validated['time_period_end_date'] ?? null,
+            'status' => 1,
+        ]);
+
+        if (in_array($rule->apply_to, ['old', 'all'])) {
+            \App\Jobs\ApplyBulkPricingRuleJob::dispatch($rule);
+        }
+
+        return redirect()->back()->with('success', 'Bulk pricing rule has been created successfully!');
+    }
+
+    public function getCitiesByTier(Request $request)
+    {
+        $tierFilter = $request->query('tier');
+        if (in_array($tierFilter, ['tier_1', 'tier_2', 'tier_3'])) {
+            $tierName = ucfirst(str_replace('_', ' ', $tierFilter));
+            $cities = \App\Models\Location::where('tier', $tierName)->orderBy('name')->get(['id', 'name']);
+            return response()->json(['success' => true, 'cities' => $cities]);
+        }
+        return response()->json(['success' => false, 'cities' => []]);
+    }
+}

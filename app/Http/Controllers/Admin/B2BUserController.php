@@ -13,6 +13,14 @@ use Illuminate\Validation\Rule;
 
 class B2BUserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_b2b_users')->only(['index', 'apiIndex']);
+        $this->middleware('can:create_b2b_users')->only(['store', 'apiStore']);
+        $this->middleware('can:edit_b2b_users')->only(['update', 'apiUpdate']);
+        $this->middleware('can:delete_b2b_users')->only(['destroy', 'apiDestroy']);
+    }
+
     public function index()
     {
         $page_heading = 'B2B Users';

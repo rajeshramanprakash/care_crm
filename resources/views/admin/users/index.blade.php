@@ -119,15 +119,17 @@
 <div class="content-wrapper pb-5">
     <section class="content-header">
         <div class="container-fluid">
-            <div class="d-flex justify-content-between mb-2 align-items-center">
-                <div class="btn-group mb-3">
+            <div class="d-flex justify-content-between mb-2 align-items-center flex-wrap">
+                <div class="d-flex flex-wrap mb-3">
                     <button class="btn role-filter active" data-role="">All</button>
                     @foreach ($roles as $role)
                         <button class="btn role-filter" data-role="{{ $role->name }}">{{ $role->name }}</button>
                     @endforeach
+                    @can('create_user')
                     <a href="{{ route('admin.users.manage') }}" class="btn add-user-btn">
                         <i class="fas fa-user-plus"></i> Add New User
                     </a>
+                    @endcan
                 </div>                <div class="d-flex gap-2">
                     <a href="{{ route('admin.break_logs.index') }}" class="btn btn-info">
                         <i class="fas fa-clock"></i> Break Logs
@@ -139,32 +141,28 @@
     </section>
     <section class="content">
         <div class="container-fluid user-table-container">
-            <div class="table-responsive">
-                <div class="scrollable-table">
-                    <table id="serverTable" class="table text-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Image</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Email</th>
-                                <th>Mobile</th>
-                                <th>Location</th>
-                                <th>Parent Member</th>
-                                <th>Role</th>
-                                <th>Lead Type</th>
-                                <th>Created At</th>
-                                <th>Duty Status</th>
-                                <th>Break Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <table id="serverTable" class="table text-sm align-middle" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Location</th>
+                        <th>Parent Member</th>
+                        <th>Role</th>
+                        <th>Lead Type</th>
+                        <th>Created At</th>
+                        <th>Duty Status</th>
+                        <th>Break Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
     </section>
 </div>
@@ -328,6 +326,10 @@
     <script src="{{ asset('plugins/moment/moment.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        const canEditUser = @json(auth()->user()->can('edit_user'));
+        const canDeleteUser = @json(auth()->user()->can('delete_user'));
+        const canViewUser = @json(auth()->user()->can('view_user'));
+        const hasAnyActionPerm = canEditUser || canDeleteUser || canViewUser;
         function makeCall(customerNumber) {
             if (!confirm('Are you sure you want to call this number?')) return;
             const $btn = $(event.target).closest('.call-btn');
@@ -386,6 +388,10 @@
             var table = $('#serverTable').DataTable({
                 processing: true,
                 serverSide: true,
+                scrollX: true,
+                scrollY: "480px",
+                scrollCollapse: true,
+                autoWidth: false,
                 ajax: {
                     url: "{{ route('admin.users.getUsers') }}",
                     data: function(d) {
@@ -514,21 +520,21 @@
                         name: 'action',
                         orderable: false,
                         searchable: false,
+                        visible: hasAnyActionPerm,
                         render: function(data, type, row) {
                             // Conditionally render create or delete agent button
                             const agentButton = row.tata_agent_id 
                                 ? `<button class="btn btn-secondary delete-agent-btn" data-id="${row.id}" data-agent-id="${row.tata_agent_id}" title="Delete Tata Agent"><i class="fas fa-times"></i></button>`
                                 : `<button class="btn btn-warning create-agent-btn" data-id="${row.id}" title="Create Tata Agent"><i class="fas fa-phone"></i></button>`;
                             
-                            return `
-                                <div class="action-btns">
-                                    <a href="/admin/users/manage/${row.id}" class="btn btn-primary" title="Edit"><i class="fas fa-edit"></i></a>
-                                    <a href="/admin/break-logs/user/${row.id}" class="btn btn-info" title="Break Logs"><i class="fas fa-clock"></i></a>
-                                    <a href="/admin/duty-logs/user/${row.id}" class="btn btn-success" title="Duty Logs"><i class="fas fa-user-check"></i></a>
-                                    ${agentButton}
-                                    <button class="btn btn-danger delete-btn" data-id="${row.id}" title="Delete"><i class="fas fa-trash"></i></button>
-                                </div>
-                            `;
+                            let html = '<div class="action-btns">';
+                            if (canEditUser) html += `<a href="/admin/users/manage/${row.id}" class="btn btn-primary" title="Edit"><i class="fas fa-edit"></i></a>`;
+                            if (canViewUser) html += `<a href="/admin/break-logs/user/${row.id}" class="btn btn-info" title="Break Logs"><i class="fas fa-clock"></i></a>`;
+                            if (canViewUser) html += `<a href="/admin/duty-logs/user/${row.id}" class="btn btn-success" title="Duty Logs"><i class="fas fa-user-check"></i></a>`;
+                            if (canEditUser) html += agentButton;
+                            if (canDeleteUser) html += `<button class="btn btn-danger delete-btn" data-id="${row.id}" title="Delete"><i class="fas fa-trash"></i></button>`;
+                            html += '</div>';
+                            return html;
                         }
                     }
                 ]

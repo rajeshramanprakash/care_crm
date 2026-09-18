@@ -14,6 +14,17 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_user')->only(['index', 'getUsers', 'show', 'getRoles', 'getLocations', 'getParentUsers', 'getLeadTypes']);
+        $this->middleware('can:create_user')->only(['store', 'manage', 'manage_process']);
+        // For edit, it usually shares manage/manage_process, so we should allow if they have create OR edit.
+        // Actually, Spatie's middleware `can:` only takes one permission, or multiple with pipe `|`?
+        // It's safer to just require `view_user` for `manage` if it's both create and edit, but since Spatie permission allows multiple we could use `permission:create_user|edit_user`.
+        // Let's use `can:delete_user` for destroy
+        $this->middleware('can:delete_user')->only(['destroy']);
+    }
+
     public function index()
     {
         // Check if this is an API request
@@ -133,6 +144,7 @@ class UserController extends Controller
         $parentUsers = User::whereRaw('FIND_IN_SET(role_id, "3,5")')->get();
         $lead_types = ['web', 'ivr', 'whatsapp'];
         $services = \App\Models\Service::all();
+        $permissions = \Spatie\Permission\Models\Permission::all();
 
         $user = null;
 
@@ -144,7 +156,7 @@ class UserController extends Controller
             $user->services = isset($user->services) ? explode(',', $user->services) : [];
         }
 
-        return view('admin.users.manage', compact('user', 'roles', 'locations', 'parentUsers', 'lead_types', 'services'));
+        return view('admin.users.manage', compact('user', 'roles', 'locations', 'parentUsers', 'lead_types', 'services', 'permissions'));
     }
 
     public function manage_process(Request $request, $id = null)
@@ -160,6 +172,7 @@ class UserController extends Controller
             'parent_id' => 'nullable|exists:users,id',
             'password' => $id ? 'nullable|min:6' : 'required|min:6',
             'services' => 'nullable|array',
+            'permissions' => 'nullable|array',
         ]);
 
         if ($validate->fails()) {
@@ -189,6 +202,9 @@ class UserController extends Controller
                 $user->update(['password' => bcrypt($request->password)]);
             }
 
+            $user->syncRoles(array_map('intval', $request->role_id));
+            $user->syncPermissions($request->permissions ?? []);
+
             $message = 'User updated successfully!';
         } else {
             // Check for soft-deleted user with same email
@@ -207,6 +223,8 @@ class UserController extends Controller
                     'password' => bcrypt($request->password),
                     'services' => $services,
                 ]);
+                $existing->syncRoles(array_map('intval', $request->role_id));
+                $existing->syncPermissions($request->permissions ?? []);
                 $user = $existing;
                 $message = 'User restored and updated successfully!';
             } else {
@@ -222,6 +240,8 @@ class UserController extends Controller
                     'password' => bcrypt($request->password),
                     'services' => $services,
                 ]);
+                $user->syncRoles(array_map('intval', $request->role_id));
+                $user->syncPermissions($request->permissions ?? []);
                 $message = 'User created successfully!';
             }
         }
@@ -324,6 +344,7 @@ class UserController extends Controller
                 'password' => bcrypt($request->password),
                 'services' => $request->services ?: null,
             ]);
+            $existing->syncRoles(array_map('intval', explode(',', $request->role_id)));
             $user = $existing;
             $message = 'User restored and updated successfully!';
         } else {
@@ -339,6 +360,7 @@ class UserController extends Controller
                 'password' => bcrypt($request->password),
                 'services' => $request->services ?: null,
             ]);
+            $user->syncRoles(array_map('intval', explode(',', $request->role_id)));
             $message = 'User created successfully!';
         }
 
@@ -411,6 +433,8 @@ class UserController extends Controller
         if ($request->filled('password')) {
             $user->update(['password' => bcrypt($request->password)]);
         }
+
+        $user->syncRoles(array_map('intval', explode(',', $request->role_id)));
 
         return response()->json([
             'message' => 'User updated successfully',

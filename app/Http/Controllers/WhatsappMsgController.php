@@ -379,6 +379,9 @@ class WhatsappMsgController extends Controller
                 return view('manager.whatsapp.index');
             case 4:
                 return view('operation.whatsapp.index');
+            case 7:
+                return view('subadmin.whatsapp.index');
+
             case 5:
                 return view('operation_manager.whatsapp.index');
             case 2:

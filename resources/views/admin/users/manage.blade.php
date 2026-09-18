@@ -139,6 +139,171 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <!-- Sub Admin Permissions -->
+                        <div id="subAdminPermissionsContainer" style="display: none; background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e0e0e0; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <label style="color: #ea8a2b; font-weight: 700; font-size: 18px; margin: 0;">
+                                    <i class="fas fa-user-shield"></i> Sub Admin Permissions Matrix
+                                </label>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllPermissionsBtn">
+                                    <i class="fas fa-check-double"></i> Select All
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover table-bordered text-center align-middle" style="border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden;">
+                                    <thead style="background-color: #f8f9fa;">
+                                        <tr>
+                                            <th class="text-start" style="width: 25%; color: #495057; font-weight: 600;">Module</th>
+                                            <th style="width: 15%; color: #495057; font-weight: 600;">Access (Menu)</th>
+                                            <th style="width: 15%; color: #495057; font-weight: 600;">View Details (Eye)</th>
+                                            <th style="width: 15%; color: #495057; font-weight: 600;">Create (Add)</th>
+                                            <th style="width: 15%; color: #495057; font-weight: 600;">Edit (Pencil)</th>
+                                            <th style="width: 15%; color: #495057; font-weight: 600;">Delete (Trash)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $modules = [
+                                                'Dashboard' => ['access' => 'view_dashboard'],
+                                                'Payments' => [
+                                                    'access' => 'view_payments',
+                                                    'create' => 'create_payment'
+                                                ],
+                                                'Leads' => [
+                                                    'access' => 'view_leads',
+                                                    'view_details' => 'view_lead_details',
+                                                    'create' => 'create_lead',
+                                                    'edit' => 'edit_lead',
+                                                    'delete' => 'delete_lead'
+                                                ],
+                                                'Sales & Operation Referral Leads' => ['access' => 'view_referral_leads'],
+                                                'Users' => [
+                                                    'access' => 'view_user',
+                                                    'create' => 'create_user',
+                                                    'edit' => 'edit_user',
+                                                    'delete' => 'delete_user'
+                                                ],
+                                                'B2B Users' => [
+                                                    'access' => 'view_b2b_users',
+                                                    'create' => 'create_b2b_users',
+                                                    'edit' => 'edit_b2b_users',
+                                                    'delete' => 'delete_b2b_users'
+                                                ],
+                                                'B2B Corporate' => [
+                                                    'access' => 'view_b2b_corporate',
+                                                    'create' => 'create_b2b_corporate',
+                                                    'edit' => 'edit_b2b_corporate',
+                                                    'delete' => 'delete_b2b_corporate'
+                                                ],
+                                                'Individual' => [
+                                                    'access' => 'view_b2b_individual',
+                                                    'create' => 'create_b2b_individual',
+                                                    'edit' => 'edit_b2b_individual',
+                                                    'delete' => 'delete_b2b_individual'
+                                                ],
+                                                'Insurers' => [
+                                                    'access' => 'view_insurers',
+                                                    'create' => 'create_insurer',
+                                                    'edit' => 'edit_insurer',
+                                                    'delete' => 'delete_insurer'
+                                                ],
+                                                'Brokers' => [
+                                                    'access' => 'view_brokers',
+                                                    'create' => 'create_broker',
+                                                    'edit' => 'edit_broker',
+                                                    'delete' => 'delete_broker'
+                                                ],
+                                                'Break Logs' => ['access' => 'view_break_logs'],
+                                                'Duty Logs' => ['access' => 'view_duty_logs'],
+                                                'Operation Leads' => ['access' => 'view_operation_leads'],
+                                                'Locations' => ['access' => 'view_locations'],
+                                                'Services' => ['access' => 'view_services'],
+                                                'Registration Languages' => ['access' => 'view_languages'],
+                                                'Agreements' => ['access' => 'view_agreements'],
+                                                'Doctor Requests' => ['access' => 'view_doctor_requests'],
+                                                'Chats' => ['access' => 'view_chats'],
+                                                'Whatsapp' => ['access' => 'view_whatsapp'],
+                                                'Job Request' => ['access' => 'view_vendors'],
+                                                'Bulk Registration' => ['access' => 'view_bulk_registration'],
+                                                'Technical Support' => ['access' => 'view_technical_support'],
+                                            ];
+
+                                            $hasPerm = function($permName) use ($user) {
+                                                return isset($user) && $user->hasDirectPermission($permName) ? 'checked' : '';
+                                            };
+                                        @endphp
+                                        
+                                        @foreach($modules as $moduleName => $perms)
+                                            <tr>
+                                                <td class="text-start fw-bold" style="color: #333;">{{ $moduleName }}</td>
+                                                
+                                                <!-- Access (Menu) -->
+                                                <td>
+                                                    @if(isset($perms['access']))
+                                                        <div class="form-check custom-control custom-checkbox d-inline-block">
+                                                            <input class="form-check-input custom-control-input perm-checkbox perm-{{ Str::slug($moduleName) }}" type="checkbox" name="permissions[]" value="{{ $perms['access'] }}" id="perm_{{ $perms['access'] }}" {{ $hasPerm($perms['access']) }}>
+                                                            <label class="form-check-label custom-control-label" for="perm_{{ $perms['access'] }}" style="cursor:pointer;"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+
+                                                <!-- View Details (Eye) -->
+                                                <td>
+                                                    @if(isset($perms['view_details']))
+                                                        <div class="form-check custom-control custom-checkbox d-inline-block">
+                                                            <input class="form-check-input custom-control-input perm-checkbox perm-{{ Str::slug($moduleName) }}" type="checkbox" name="permissions[]" value="{{ $perms['view_details'] }}" id="perm_{{ $perms['view_details'] }}" {{ $hasPerm($perms['view_details']) }}>
+                                                            <label class="form-check-label custom-control-label" for="perm_{{ $perms['view_details'] }}" style="cursor:pointer;"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                
+                                                <!-- Create -->
+                                                <td>
+                                                    @if(isset($perms['create']))
+                                                        <div class="form-check custom-control custom-checkbox d-inline-block">
+                                                            <input class="form-check-input custom-control-input perm-checkbox perm-{{ Str::slug($moduleName) }}" type="checkbox" name="permissions[]" value="{{ $perms['create'] }}" id="perm_{{ $perms['create'] }}" {{ $hasPerm($perms['create']) }}>
+                                                            <label class="form-check-label custom-control-label" for="perm_{{ $perms['create'] }}" style="cursor:pointer;"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                
+                                                <!-- Edit -->
+                                                <td>
+                                                    @if(isset($perms['edit']))
+                                                        <div class="form-check custom-control custom-checkbox d-inline-block">
+                                                            <input class="form-check-input custom-control-input perm-checkbox perm-{{ Str::slug($moduleName) }}" type="checkbox" name="permissions[]" value="{{ $perms['edit'] }}" id="perm_{{ $perms['edit'] }}" {{ $hasPerm($perms['edit']) }}>
+                                                            <label class="form-check-label custom-control-label" for="perm_{{ $perms['edit'] }}" style="cursor:pointer;"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                
+                                                <!-- Delete -->
+                                                <td>
+                                                    @if(isset($perms['delete']))
+                                                        <div class="form-check custom-control custom-checkbox d-inline-block">
+                                                            <input class="form-check-input custom-control-input perm-checkbox perm-{{ Str::slug($moduleName) }}" type="checkbox" name="permissions[]" value="{{ $perms['delete'] }}" id="perm_{{ $perms['delete'] }}" {{ $hasPerm($perms['delete']) }}>
+                                                            <label class="form-check-label custom-control-label" for="perm_{{ $perms['delete'] }}" style="cursor:pointer;"></label>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 <!-- Services Field (Only for Operation Role) -->
                         <div id="servicesFieldContainer" style="display: none;">
                             <div class="form-group">
@@ -240,16 +405,38 @@
             }
         }
 
+        function toggleSubAdminPermissions() {
+            const selectedRoleTexts = [];
+            $('#role_id option:selected').each(function() {
+                selectedRoleTexts.push($(this).text().trim().toLowerCase());
+            });
+            
+            if (selectedRoleTexts.includes('sub admin')) {
+                $('#subAdminPermissionsContainer').show();
+            } else {
+                $('#subAdminPermissionsContainer').hide();
+            }
+        }
+
+        // Permissions Matrix - Global Select All
+        $('#selectAllPermissionsBtn').on('click', function() {
+            const allCheckboxes = $('#subAdminPermissionsContainer input[type="checkbox"]');
+            const anyUnchecked = allCheckboxes.not(':checked').length > 0;
+            allCheckboxes.prop('checked', anyUnchecked);
+        });
+
         // Get initial selected roles
         const initialRoleIds = $('#role_id').val();
         toggleCommissionFields(initialRoleIds);
         toggleServicesField();
+        toggleSubAdminPermissions();
 
         // Handle role selection change
         $('#role_id').on('change', function() {
             const selectedRoles = $(this).val();
             toggleCommissionFields(selectedRoles);
             toggleServicesField();
+            toggleSubAdminPermissions();
         });
 
         // Handle Select All for locations

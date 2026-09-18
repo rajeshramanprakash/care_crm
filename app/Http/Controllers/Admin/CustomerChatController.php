@@ -12,6 +12,11 @@ use Illuminate\Http\Request;
 
 class CustomerChatController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_chats');
+    }
+
     public function index(Request $request)
     {
         // Get filter parameters

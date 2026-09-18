@@ -14,6 +14,21 @@ use Illuminate\Validation\Rule;
 
 class B2BPartnerAccountController extends Controller
 {
+    public function __construct()
+    {
+        // Corporate
+        $this->middleware('can:view_b2b_corporate')->only(['indexCorporate']);
+        $this->middleware('can:create_b2b_corporate')->only(['storeCorporate']);
+        $this->middleware('can:edit_b2b_corporate')->only(['updateCorporate']);
+        $this->middleware('can:delete_b2b_corporate')->only(['destroyCorporate']);
+        
+        // Individual
+        $this->middleware('can:view_b2b_individual')->only(['indexIndividual']);
+        $this->middleware('can:create_b2b_individual')->only(['storeIndividual']);
+        $this->middleware('can:edit_b2b_individual')->only(['updateIndividual']);
+        $this->middleware('can:delete_b2b_individual')->only(['destroyIndividual']);
+    }
+
     public function indexCorporate()
     {
         return $this->indexPage(B2BUser::TYPE_CORPORATE);

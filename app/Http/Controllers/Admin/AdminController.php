@@ -27,6 +27,11 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_dashboard')->only(['dashboard']);
+    }
+
     public function dashboard(){
         // Get today's counts for cards
         $newSalesLeadsCount = Lead::whereDate('created_at', Carbon::today())->count();

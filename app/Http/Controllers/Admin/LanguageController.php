@@ -14,7 +14,9 @@ class LanguageController extends Controller
 {
     public function __construct(
         private readonly RegistrationI18nService $i18n
-    ) {}
+    ) {
+        $this->middleware('can:view_languages');
+    }
 
     public function index(): View
     {

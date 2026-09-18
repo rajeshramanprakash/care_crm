@@ -209,6 +209,7 @@
                 <p class="b2b-page-sub mb-0">Manage partner companies and referrers. Referrers appear in the company “Referral user” dropdown and sign in via OTP.</p>
             </div>
 
+            @can('create_b2b_users')
             <div class="b2b-toolbar mb-3">
                 <button type="button" class="btn btn-sm btn-outline-primary font-weight-semibold px-3" data-toggle="modal" data-target="#createB2BReferenceUserModal" data-bs-toggle="modal" data-bs-target="#createB2BReferenceUserModal">
                     <i class="fas fa-user-tag mr-1"></i>Add B2B Reference User
@@ -225,6 +226,7 @@
                     <i class="fas fa-building mr-1"></i>Create B2B User
                 </button>
             </div>
+            @endcan
 
             <div class="row align-items-start">
                 {{-- Column 1: B2B Users (wider) --}}
@@ -267,12 +269,16 @@
                                                 <td class="b2b-actions-cell align-middle">
                                                     <div class="b2b-actions">
                                                         <button type="button" class="btn btn-sm btn-info py-1" data-toggle="modal" data-target="#viewB2BUserModal{{ $item->id }}" data-bs-toggle="modal" data-bs-target="#viewB2BUserModal{{ $item->id }}">View</button>
+                                                        @can('edit_b2b_users')
                                                         <button type="button" class="btn btn-sm btn-primary py-1" data-toggle="modal" data-target="#editB2BUserModal{{ $item->id }}" data-bs-toggle="modal" data-bs-target="#editB2BUserModal{{ $item->id }}">Edit</button>
+                                                        @endcan
+                                                        @can('delete_b2b_users')
                                                         <form method="POST" action="{{ route('admin.b2b_users.destroy', $item) }}" class="d-inline m-0" onsubmit="return confirm('Delete this B2B user? All leads they created in the B2B portal will be permanently removed.');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-sm btn-danger py-1">Delete</button>
                                                         </form>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>
@@ -452,7 +458,9 @@
                                             <th>Name</th>
                                             <th>Mobile</th>
                                             <th>Created</th>
+                                            @can('delete_b2b_users')
                                             <th>Action</th>
+                                            @endcan
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -462,6 +470,7 @@
                                                 <td class="b2b-cell-strong">{{ $ref->name }}</td>
                                                 <td class="text-nowrap">{{ $ref->mobile }}</td>
                                                 <td class="cell-muted text-nowrap">{{ $ref->created_at?->format('d M Y, h:i A') }}</td>
+                                                @can('delete_b2b_users')
                                                 <td class="b2b-actions-cell align-middle">
                                                     <div class="b2b-actions">
                                                         <form method="POST" action="{{ route('admin.b2b_reference_users.destroy', $ref) }}" class="d-inline m-0" onsubmit="return confirm('Delete this reference user? Linked B2B companies will lose their referral assignment.');">
@@ -471,10 +480,11 @@
                                                         </form>
                                                     </div>
                                                 </td>
+                                                @endcan
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted py-4">No reference users yet.</td>
+                                                <td colspan="{{ auth()->user()->can('delete_b2b_users') ? 5 : 4 }}" class="text-center text-muted py-4">No reference users yet.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

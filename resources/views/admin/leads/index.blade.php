@@ -7,45 +7,15 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
     <style>
         .table-responsive {
-    overflow-x: auto;
-    position: relative;
-}
+            overflow-x: auto;
+            position: relative;
+        }
 
-table {
-    width: 100%;
-    min-width: 1400px;
-    table-layout: fixed;
-}
-table thead, #table tfoot {
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 2;
-}
-table tbody {
-    display: block;
-    max-height: 50vh;
-    overflow-x: auto;
-    overflow-y: auto;
-    width: 100%;
-}
-table thead, table tfoot, table tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-}
-
-.custom-table-scroll-x {
-    width: 100%;
-    overflow-x: auto;
-}
-.custom-table-scroll-x table {
-    min-width: 1400px;
-    width: 100%;
-    table-layout: fixed;
-}
-
-        </style>
+        /* Use DataTables native scrollX and scrollY instead of manual CSS hacks */
+        #leads-table {
+            min-width: 1400px;
+        }
+    </style>
 @endsection
 @section('navbar-right-links')
 <li class="nav-item">
@@ -65,9 +35,11 @@ table thead, table tfoot, table tbody tr {
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h1 class="m-0" style="font-weight: 800">Sales Leads</h1>
+                    @can('create_lead')
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLeadModal">
                         <i class="fas fa-plus"></i> Add New Lead
                     </button>
+                    @endcan
                 </div>
             </div>
         </section>
@@ -76,7 +48,7 @@ table thead, table tfoot, table tbody tr {
             <div class="container-fluid">
                 <div class="card">
                     <div class="card-body">
-                        <div class="custom-table-scroll-x">
+                        <div class="table-responsive">
                             <table id="leads-table" class="table">
                                 <thead>
                                     <tr>
@@ -93,7 +65,9 @@ table thead, table tfoot, table tbody tr {
                                         <th>Query</th>
                                         <th>Status</th>
                                         <th>Stage</th>
+                                        @if(auth()->user()->can('view_lead_details') || auth()->user()->can('edit_lead') || auth()->user()->can('delete_lead'))
                                         <th>Action</th>
+                                        @endif
                                     </tr>
                                 </thead>
                             </table>
@@ -1025,6 +999,9 @@ table thead, table tfoot, table tbody tr {
             var table = $('#leads-table').DataTable({
                 processing: true,
                 serverSide: false,
+                scrollX: true,
+                scrollY: '50vh',
+                scrollCollapse: true,
                 responsive: false,
                 ajax: {
                     url: '{{ route('admin.leads.getLeads') }}',
@@ -1233,26 +1210,38 @@ table thead, table tfoot, table tbody tr {
                             return `<span class="status-badge ${stageClass}">${displayText}</span>`;
                         }
                     },
+                    @if(auth()->user()->can('view_lead_details') || auth()->user()->can('edit_lead') || auth()->user()->can('delete_lead'))
                     {
+                        visible: {{ (auth()->user()->can('delete_lead') || auth()->user()->can('view_lead_details') || auth()->user()->can('edit_lead')) ? 'true' : 'false' }},
                         data: null,
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
-                            return `
-                                <div class="btn-group" role="group">
-                                    <button class="action-btn view-btn" data-id="${row.id}" title="View">
+                            let actions = '<div class="btn-group" role="group">';
+                            
+                            @can('view_lead_details')
+                            actions += `<button class="action-btn view-btn" data-id="${row.id}" title="View">
                                         <i class="fa fa-eye"></i>
-                                    </button>
-                                    <button class="action-btn edit-btn" data-id="${row.id}" title="Edit">
+                                    </button>`;
+                            @endcan
+                            
+                            @can('edit_lead')
+                            actions += `<button class="action-btn edit-btn" data-id="${row.id}" title="Edit">
                                         <i class="fa fa-pen-to-square"></i>
-                                    </button>
-                                    <button class="action-btn delete-btn" data-id="${row.id}" title="Delete">
+                                    </button>`;
+                            @endcan
+                            
+                            @can('delete_lead')
+                            actions += `<button class="action-btn delete-btn" data-id="${row.id}" title="Delete">
                                         <i class="fa fa-trash-can"></i>
-                                    </button>
-                                </div>
-                            `;
+                                    </button>`;
+                            @endcan
+                            
+                            actions += '</div>';
+                            return actions;
                         }
                     }
+                    @endif
                 ],
                 order: [
                     [0, 'desc']

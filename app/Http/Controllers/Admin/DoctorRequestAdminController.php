@@ -26,6 +26,11 @@ use Illuminate\Validation\Rule;
 
 class DoctorRequestAdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_doctor_requests');
+    }
+
     public function index()
     {
         $doctorReferralUsers = DoctorReferralUser::query()->withCount('doctorRequests')->orderByDesc('id')->get();

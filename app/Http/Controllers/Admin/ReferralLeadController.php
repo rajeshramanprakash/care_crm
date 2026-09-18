@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class ReferralLeadController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_referral_leads');
+    }
+
     public function index(Request $request)
     {
         $status = trim((string) $request->query('status', ''));

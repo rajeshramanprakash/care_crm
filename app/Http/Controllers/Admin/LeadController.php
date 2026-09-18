@@ -21,6 +21,14 @@ class LeadController extends Controller
 {
     use HandlesLeadStatusRemarks;
 
+    public function __construct()
+    {
+        $this->middleware('can:view_leads')->only(['index', 'getLeads', 'show', 'getExecutives', 'getLocations']);
+        $this->middleware('can:create_leads')->only(['store', 'create']);
+        $this->middleware('can:edit_leads')->only(['edit', 'update', 'updateStatusRemark']);
+        $this->middleware('can:delete_leads')->only(['destroy']);
+    }
+
     public function index()
     {
         // Check if this is an API request

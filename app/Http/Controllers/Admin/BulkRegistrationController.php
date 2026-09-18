@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class BulkRegistrationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_bulk_registration');
+    }
+
     public function index()
     {
         $services = Service::with('subServices')->get();

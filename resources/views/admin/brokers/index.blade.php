@@ -10,9 +10,11 @@
                     <h3 class="card-title mb-0">Broker Accounts</h3>
                     <p class="text-muted small mb-0 mt-1">Create login credentials for brokers. They sign in at <code>/broker/login</code>.</p>
                 </div>
+                @can('create_broker')
                 <a href="{{ route('admin.brokers.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> Add New Broker
                 </a>
+                @endcan
             </div>
             <div class="card-body">
                 @if(session('success'))
@@ -82,12 +84,16 @@
                                             @endif
                                         </td>
                                         <td class="text-nowrap">
+                                            @can('edit_broker')
                                             <a href="{{ route('admin.brokers.edit', $item) }}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit"></i></a>
+                                            @endcan
+                                            @can('delete_broker')
                                             <form action="{{ route('admin.brokers.destroy', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this broker account?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                                             </form>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @endforeach

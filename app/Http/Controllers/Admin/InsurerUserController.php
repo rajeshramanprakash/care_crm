@@ -12,6 +12,14 @@ class InsurerUserController extends Controller
 {
     use HandlesPartnerUserDocuments;
 
+    public function __construct()
+    {
+        $this->middleware('can:view_insurers')->only(['index', 'show']);
+        $this->middleware('can:create_insurer')->only(['create', 'store']);
+        $this->middleware('can:edit_insurer')->only(['edit', 'update']);
+        $this->middleware('can:delete_insurer')->only(['destroy']);
+    }
+
     private function validatePayload(Request $request, ?int $ignoreId = null): array
     {
         $rules = [

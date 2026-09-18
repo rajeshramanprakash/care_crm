@@ -12,6 +12,14 @@ class BrokerUserController extends Controller
 {
     use HandlesPartnerUserDocuments;
 
+    public function __construct()
+    {
+        $this->middleware('can:view_brokers')->only(['index', 'show']);
+        $this->middleware('can:create_broker')->only(['create', 'store']);
+        $this->middleware('can:edit_broker')->only(['edit', 'update']);
+        $this->middleware('can:delete_broker')->only(['destroy']);
+    }
+
     private function validatePayload(Request $request, ?int $ignoreId = null): array
     {
         $rules = [

@@ -12,7 +12,12 @@ class EasebuzzPaymentLinkController extends Controller
 {
     public function __construct(
         private EasebuzzEasyCollectService $easyCollect
-    ) {}
+    ) {
+        $this->middleware('can:view_payments')->only(['index', 'show']);
+        $this->middleware('can:create_payment')->only(['create', 'store']);
+        // Verify isn't strictly view/create, but it usually falls under view or create. Let's protect it with view.
+        $this->middleware('can:view_payments')->only(['verify']);
+    }
 
     public function index(Request $request)
     {
@@ -204,6 +209,11 @@ class EasebuzzPaymentLinkController extends Controller
             'Admin' => [
                 'layout' => 'admin.layouts.app',
                 'route_prefix' => 'admin',
+                'is_admin' => true,
+            ],
+            'Sub Admin' => [
+                'layout' => 'admin.layouts.app',
+                'route_prefix' => 'subadmin',
                 'is_admin' => true,
             ],
             'Sales' => [

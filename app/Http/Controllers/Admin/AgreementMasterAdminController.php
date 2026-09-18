@@ -13,6 +13,11 @@ use Illuminate\View\View;
 
 class AgreementMasterAdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_agreements');
+    }
+
     public function index(): View
     {
         $totalDoctors = DoctorRequest::count();

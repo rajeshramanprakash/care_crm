@@ -529,6 +529,7 @@ Route::post('whatsapp_msg_status', [Controllers\WhatsappMsgController::class, 'w
 Route::match(['get','post'], '/send-otp', [Controllers\AuthController::class, 'sendOtp'])
     ->name('send.otp');
 Route::post('/login', [Controllers\AuthController::class, 'login'])->name('login');
+Route::get('/login/role-select', [Controllers\AuthController::class, 'showRoleSelect'])->name('login.role.select.show');
 Route::post('/login/role-select', [Controllers\AuthController::class, 'selectRole'])->name('login.role.select');
 Route::get('/logout', [Controllers\AuthController::class, 'logout'])->name('logout');
 
@@ -934,11 +935,11 @@ Route::prefix('/admin')->middleware(['auth', 'role:Admin'])->group(function () {
     Route::put('/operation-leads/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'update'])->name('admin.operation_leads.update');
     Route::delete('/operation-leads/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'destroy'])->name('admin.operation_leads.destroy');
 
-// Payment Details Routes
-Route::post('operation-leads/{lead}/payment', [App\Http\Controllers\Admin\OperationLeadController::class, 'storePaymentDetail'])->name('admin.operation_leads.payment.store');
-Route::get('operation-leads/payment/{id}/edit', [App\Http\Controllers\Admin\OperationLeadController::class, 'editPaymentDetail'])->name('admin.operation_leads.payment.edit');
-Route::put('operation-leads/payment/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'updatePaymentDetail'])->name('admin.operation_leads.payment.update');
-Route::delete('operation-leads/payment/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'destroyPaymentDetail'])->name('admin.operation_leads.payment.destroy');
+    // Payment Details Routes
+    Route::post('operation-leads/{lead}/payment', [App\Http\Controllers\Admin\OperationLeadController::class, 'storePaymentDetail'])->name('admin.operation_leads.payment.store');
+    Route::get('operation-leads/payment/{id}/edit', [App\Http\Controllers\Admin\OperationLeadController::class, 'editPaymentDetail'])->name('admin.operation_leads.payment.edit');
+    Route::put('operation-leads/payment/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'updatePaymentDetail'])->name('admin.operation_leads.payment.update');
+    Route::delete('operation-leads/payment/{id}', [App\Http\Controllers\Admin\OperationLeadController::class, 'destroyPaymentDetail'])->name('admin.operation_leads.payment.destroy');
 
     // Deployment Details Routes
     Route::post('operation-leads/{lead}/deployment', [App\Http\Controllers\Admin\OperationLeadController::class, 'storeDeploymentDetail'])->name('admin.operation_leads.deployment.store');
@@ -1097,29 +1098,29 @@ Route::delete('operation-leads/payment/{id}', [App\Http\Controllers\Admin\Operat
     Route::get('/break-logs', function() {
         $breakLogs = BreakLog::with('user')->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.break_logs.index', compact('breakLogs'));
-    })->name('admin.break_logs.index');
+    })->name('admin.break_logs.index')->middleware('can:view_break_logs');
 
     Route::get('/break-logs/user/{userId}', function($userId) {
         $user = User::findOrFail($userId);
         $breakLogs = BreakLog::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.break_logs.user_logs', compact('breakLogs', 'user'));
-    })->name('admin.break_logs.user');
+    })->name('admin.break_logs.user')->middleware('can:view_break_logs');
 
     // Duty Logs Routes
     Route::get('/duty-logs', function() {
         $dutyLogs = DutyLogs::with('user')->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.duty_logs.index', compact('dutyLogs'));
-    })->name('admin.duty_logs.index');
+    })->name('admin.duty_logs.index')->middleware('can:view_duty_logs');
 
     Route::get('/duty-logs/user/{userId}', function($userId) {
         $user = User::findOrFail($userId);
         $dutyLogs = DutyLogs::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.duty_logs.user_logs', compact('dutyLogs', 'user'));
-    })->name('admin.duty_logs.user');
+    })->name('admin.duty_logs.user')->middleware('can:view_duty_logs');
 
     Route::get('technical-support', function () {
         return view('admin.technical_support.index');
-    })->name('admin.technical-support.index');
+    })->name('admin.technical-support.index')->middleware('can:view_technical_support');
 
 });
 
@@ -1585,3 +1586,254 @@ Route::middleware(['auth'])->group(function() {
 
 
 
+
+
+// Routes for Sub Admin Role
+Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(function () {
+    Route::get('/dashboard', [Controllers\SubAdmin\SubAdminController::class, 'dashboard'])->name('subadmin.dashboard');
+    Route::get('/dashboard/sales-leads-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getSalesLeadsStats'])->name('subadmin.dashboard.sales-leads-stats');
+    Route::get('/dashboard/operation-leads-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getOperationLeadsStats'])->name('subadmin.dashboard.operation-leads-stats');
+    Route::get('/dashboard/users-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getUsersStats'])->name('subadmin.dashboard.users-stats');
+    Route::get('/dashboard/user-details/{userId}', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getUserDetails'])->name('subadmin.dashboard.user-details');
+    Route::get('/dashboard/sales-executives', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getSalesExecutives'])->name('subadmin.dashboard.sales-executives');
+    Route::get('/dashboard/operation-executives', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getOperationExecutives'])->name('subadmin.dashboard.operation-executives');
+    Route::get('/dashboard/users', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getUsers'])->name('subadmin.dashboard.users');
+
+    // Task Management Routes
+    Route::get('/dashboard/tasks', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getTasks'])->name('subadmin.dashboard.tasks');
+    Route::post('/dashboard/tasks', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'storeTask'])->name('subadmin.dashboard.tasks.store');
+    Route::get('/dashboard/tasks/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'editTask'])->name('subadmin.dashboard.tasks.edit');
+    Route::put('/dashboard/tasks/{id}', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'updateTask'])->name('subadmin.dashboard.tasks.update');
+    Route::delete('/dashboard/tasks/{id}', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'destroyTask'])->name('subadmin.dashboard.tasks.destroy');
+    Route::get('/dashboard/task-history', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getTaskHistory'])->name('subadmin.dashboard.task-history');
+    Route::get('/dashboard/calendar-data', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getCalendarData'])->name('subadmin.dashboard.calendar-data');
+    Route::get('/dashboard/calendar-leads', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getCalendarLeads'])->name('subadmin.dashboard.calendar-leads');
+    Route::get('/dashboard/revenue-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getRevenueStats'])->name('subadmin.dashboard.revenue-stats');
+    Route::get('/dashboard/pending-deployments', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getPendingDeployments'])->name('subadmin.dashboard.pending-deployments');
+    Route::get('/dashboard/outstanding-amount-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getOutstandingAmountStats'])->name('subadmin.dashboard.outstanding-amount-stats');
+    Route::get('/dashboard/profile-pending-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getProfilePendingStats'])->name('subadmin.dashboard.profile-pending-stats');
+    Route::get('/dashboard/vendor-payment-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getVendorPaymentStats'])->name('subadmin.dashboard.vendor-payment-stats');
+    Route::get('/dashboard/unverified-deployment-payments-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getUnverifiedDeploymentPaymentsStats'])->name('subadmin.dashboard.unverified-deployment-payments-stats');
+    Route::get('/dashboard/pending-callbacks', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getPendingCallbacks'])->name('subadmin.dashboard.pending-callbacks');
+    
+    // Recent Calls Routes
+    Route::get('/dashboard/recent-calls/sales', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getRecentCallsSales'])->name('subadmin.dashboard.recent-calls.sales');
+    Route::get('/dashboard/recent-calls/operation', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getRecentCallsOperation'])->name('subadmin.dashboard.recent-calls.operation');
+    
+
+    Route::get('/payments', [App\Http\Controllers\EasebuzzPaymentLinkController::class, 'index'])->name('subadmin.payments.index');
+    Route::get('/payments/create', [App\Http\Controllers\EasebuzzPaymentLinkController::class, 'create'])->name('subadmin.payments.create');
+    Route::post('/payments', [App\Http\Controllers\EasebuzzPaymentLinkController::class, 'store'])->name('subadmin.payments.store');
+    Route::get('/payments/{payment}', [App\Http\Controllers\EasebuzzPaymentLinkController::class, 'show'])->name('subadmin.payments.show');
+    Route::post('/payments/{payment}/verify', [App\Http\Controllers\EasebuzzPaymentLinkController::class, 'verify'])->name('subadmin.payments.verify');
+
+    // Sub Admin Leads Routes
+    Route::get('/leads', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'index'])->name('subadmin.leads.index');
+    Route::get('/leads/getLeads', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'getLeads'])->name('subadmin.leads.getLeads');
+    Route::get('/leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'show'])->name('subadmin.leads.show');
+    Route::delete('/leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'destroy'])->name('subadmin.leads.destroy');
+    Route::post('/leads', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'store'])->name('subadmin.leads.store');
+    Route::get('/leads/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'edit'])->name('subadmin.leads.edit');
+    Route::put('/leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'update'])->name('subadmin.leads.update');
+    Route::put('/leads/{lead}/status-remarks/{remark}', [App\Http\Controllers\SubAdmin\SubAdminLeadController::class, 'updateStatusRemark'])->name('subadmin.leads.status-remarks.update');
+
+    // Sub Admin Operation Leads Routes
+    Route::get('/operation-leads', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'index'])->name('subadmin.operation_leads.index');
+    Route::post('/operation-leads', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'store'])->name('subadmin.operation_leads.store');
+    Route::get('/operation-leads/getLeads', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'getLeads'])->name('subadmin.operation_leads.getLeads');
+    Route::get('operation-leads/filtered-vendors', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'getFilteredVendorsForDeployment'])->name('subadmin.operation_leads.filtered_vendors');
+    Route::get('operation-leads/vendor-details', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'getVendorDetails'])->name('subadmin.operation_leads.vendor_details');
+    Route::post('operation-leads/update-freelancer-status', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'updateFreelancerStatus'])->name('subadmin.operation_leads.update_freelancer_status');
+    Route::get('operation-leads/updated-vendor-count', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'getUpdatedVendorCount'])->name('subadmin.operation_leads.updated_vendor_count');
+    Route::get('/operation-leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'show'])->name('subadmin.operation_leads.show');
+    Route::get('/operation-leads/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'edit'])->name('subadmin.operation_leads.edit');
+    Route::put('/operation-leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'update'])->name('subadmin.operation_leads.update');
+    Route::delete('/operation-leads/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'destroy'])->name('subadmin.operation_leads.destroy');
+    Route::post('operation-leads/{lead}/payment', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'storePaymentDetail'])->name('subadmin.operation_leads.payment.store');
+    Route::get('operation-leads/payment/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'editPaymentDetail'])->name('subadmin.operation_leads.payment.edit');
+    Route::put('operation-leads/payment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'updatePaymentDetail'])->name('subadmin.operation_leads.payment.update');
+    Route::delete('operation-leads/payment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'destroyPaymentDetail'])->name('subadmin.operation_leads.payment.destroy');
+    Route::post('operation-leads/{lead}/deployment', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'storeDeploymentDetail'])->name('subadmin.operation_leads.deployment.store');
+    Route::get('operation-leads/deployment/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'editDeploymentDetail'])->name('subadmin.operation_leads.deployment.edit');
+    Route::put('operation-leads/deployment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'updateDeploymentDetail'])->name('subadmin.operation_leads.deployment.update');
+    Route::delete('operation-leads/deployment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'destroyDeploymentDetail'])->name('subadmin.operation_leads.deployment.destroy');
+    Route::post('operation-leads/deployment/{id}/toggle-verify-payment', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'toggleVerifyPayment'])->name('subadmin.operation_leads.deployment.toggle-verify-payment');
+    Route::post('operation-leads/deployment/{id}/dates', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'getDeploymentDates'])->name('subadmin.operation_leads.deployment.dates');
+    Route::post('operation-leads/deployment/{id}/toggle-absent', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'toggleDeploymentAbsentDate'])->name('subadmin.operation_leads.deployment.toggle-absent');
+    Route::post('operation-leads/deployment/{id}/save-absent', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'saveDeploymentAbsentDates'])->name('subadmin.operation_leads.deployment.save-absent');
+    Route::get('operation-leads/payment-invoice/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'showPaymentInvoice'])->name('subadmin.operation_leads.payment_invoice.show');
+    Route::post('operation-leads/invoice/{invoiceId}/received-payment', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'storeReceivedPayment'])->name('subadmin.operation_leads.received_payment.store');
+    Route::get('operation-leads/received-payment/{id}/edit', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'editReceivedPayment'])->name('subadmin.operation_leads.received_payment.edit');
+    Route::put('operation-leads/received-payment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'updateReceivedPayment'])->name('subadmin.operation_leads.received_payment.update');
+    Route::delete('operation-leads/received-payment/{id}', [App\Http\Controllers\SubAdmin\SubAdminOperationLeadController::class, 'destroyReceivedPayment'])->name('subadmin.operation_leads.received_payment.destroy');
+
+    // B2B & Reference Users
+    Route::get('b2b-users', [Controllers\SubAdmin\SubAdminB2BUserController::class, 'index'])->name('subadmin.b2b_users.index');
+    Route::post('b2b-users', [Controllers\SubAdmin\SubAdminB2BUserController::class, 'store'])->name('subadmin.b2b_users.store');
+    Route::post('b2b-users/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BUserController::class, 'update'])->name('subadmin.b2b_users.update');
+    Route::delete('b2b-users/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BUserController::class, 'destroy'])->name('subadmin.b2b_users.destroy');
+    Route::get('b2b-users/options', [Controllers\SubAdmin\SubAdminB2BUserController::class, 'apiIndex'])->name('subadmin.b2b_users.options');
+
+    Route::post('b2b-reference-users', [Controllers\SubAdmin\SubAdminB2BReferenceUserController::class, 'store'])->name('subadmin.b2b_reference_users.store');
+    Route::delete('b2b-reference-users/{b2bReferenceUser}', [Controllers\SubAdmin\SubAdminB2BReferenceUserController::class, 'destroy'])->name('subadmin.b2b_reference_users.destroy');
+
+    Route::get('b2b-corporate-partners', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'indexCorporate'])->name('subadmin.b2b_corporate.index');
+    Route::post('b2b-corporate-partners', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'storeCorporate'])->name('subadmin.b2b_corporate.store');
+    Route::post('b2b-corporate-partners/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'updateCorporate'])->name('subadmin.b2b_corporate.update');
+    Route::delete('b2b-corporate-partners/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'destroyCorporate'])->name('subadmin.b2b_corporate.destroy');
+    Route::get('b2b-individual-partners', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'indexIndividual'])->name('subadmin.b2b_individual.index');
+    Route::post('b2b-individual-partners', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'storeIndividual'])->name('subadmin.b2b_individual.store');
+    Route::post('b2b-individual-partners/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'updateIndividual'])->name('subadmin.b2b_individual.update');
+    Route::delete('b2b-individual-partners/{b2bUser}', [Controllers\SubAdmin\SubAdminB2BPartnerAccountController::class, 'destroyIndividual'])->name('subadmin.b2b_individual.destroy');
+
+    Route::get('corporate-individual-b2b', [Controllers\SubAdmin\SubAdminCorporateIndividualHubController::class, 'index'])->name('subadmin.corporate_individual.hub');
+
+    // Users
+    Route::resource('users', Controllers\SubAdmin\SubAdminUserController::class)->names('subadmin.users');
+
+    // Insurers & Brokers
+    Route::resource('insurers', Controllers\SubAdmin\SubAdminInsurerUserController::class)->names('subadmin.insurers')->except(['show']);
+    Route::resource('brokers', Controllers\SubAdmin\SubAdminBrokerUserController::class)->names('subadmin.brokers')->except(['show']);
+    // Services
+    Route::resource('services', Controllers\SubAdmin\SubAdminServiceController::class)->names('subadmin.services');
+
+    // Break Logs
+    Route::get('/break-logs', function() {
+        $breakLogs = \App\Models\BreakLog::with('user')->orderBy('created_at', 'desc')->paginate(20);
+        return view('subadmin.break_logs.index', compact('breakLogs'));
+    })->name('subadmin.break_logs.index')->middleware('can:view_break_logs');
+
+    Route::get('/break-logs/user/{userId}', function($userId) {
+        $user = \App\Models\User::findOrFail($userId);
+        $breakLogs = \App\Models\BreakLog::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
+        return view('subadmin.break_logs.user_logs', compact('breakLogs', 'user'));
+    })->name('subadmin.break_logs.user_logs');
+
+    // Duty Logs
+    Route::get('/duty-logs', function() {
+        $dutyLogs = \App\Models\DutyLogs::with('user')->orderBy('created_at', 'desc')->paginate(20);
+        return view('subadmin.duty_logs.index', compact('dutyLogs'));
+    })->name('subadmin.duty_logs.index')->middleware('can:view_duty_logs');
+
+    Route::get('/duty-logs/user/{userId}', function($userId) {
+        $user = \App\Models\User::findOrFail($userId);
+        $dutyLogs = \App\Models\DutyLogs::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
+        return view('subadmin.duty_logs.user_logs', compact('dutyLogs', 'user'));
+    })->name('subadmin.duty_logs.user_logs');
+    Route::get('corporate-accounts', [Controllers\SubAdmin\SubAdminCorporateUserController::class, 'index'])->name('subadmin.corporate-accounts.index');
+    Route::get('corporate-employees', [Controllers\SubAdmin\SubAdminCorporateEmployeeController::class, 'index'])->name('subadmin.corporate-employees.index');
+    // --- BATCH 4 ROUTES ---
+    
+    // Technical Support
+    Route::get('technical-support', function () {
+        return view('subadmin.technical_support.index');
+    })->name('subadmin.technical-support.index')->middleware('can:view_technical_support');
+
+    // Bulk Registration
+    Route::get('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'index'])->name('subadmin.bulk_registration.index');
+    Route::post('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'store'])->name('subadmin.bulk_registration.store');
+    Route::get('/bulk-registration/cities-by-tier', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'getCitiesByTier'])->name('subadmin.bulk_registration.cities_by_tier');
+
+    // Vendor and Freelancer (Registration OTP Logs & Vendor CRUD)
+    Route::get('/vendor-registration-otp-logs', [Controllers\SubAdmin\SubAdminRegistrationOtpLogController::class, 'index'])
+        ->defaults('registrationType', 'vendor')
+        ->name('subadmin.vendor_registration_otp_logs.index');
+    Route::get('/freelancer-registration-otp-logs', [Controllers\SubAdmin\SubAdminRegistrationOtpLogController::class, 'index'])
+        ->defaults('registrationType', 'freelancer')
+        ->name('subadmin.freelancer_registration_otp_logs.index');
+
+    Route::get('/vendors', [Controllers\SubAdmin\SubAdminVendorController::class, 'index'])->name('subadmin.vendors.index');
+    Route::post('/vendors', [Controllers\SubAdmin\SubAdminVendorController::class, 'store'])->name('subadmin.vendors.store');
+    Route::get('/vendors/edit/{id?}', [Controllers\SubAdmin\SubAdminVendorController::class, 'edit'])->name('subadmin.vendors.edit');
+    Route::put('/vendors/{id?}', [Controllers\SubAdmin\SubAdminVendorController::class, 'update'])->name('subadmin.vendors.update');
+    Route::delete('/vendors/{id?}', [Controllers\SubAdmin\SubAdminVendorController::class, 'destroy'])->name('subadmin.vendors.destroy');
+    Route::get('/vendors/{vendor}/price-change-requests', [Controllers\SubAdmin\SubAdminVendorController::class, 'priceChangeRequests'])->name('subadmin.vendors.price_change_requests');
+
+    // Location Attendance
+    Route::get('/location-attendance', [Controllers\SubAdmin\SubAdminController::class, 'locationAttendance'])->name('subadmin.location_attendance.index');
+    Route::get('/location-attendance/deployments/{deployment}', [Controllers\SubAdmin\SubAdminController::class, 'locationAttendanceDeploymentDetail'])->name('subadmin.location_attendance.deployment_detail');
+
+    // Job Proc
+    Route::get('/jobproc', [Controllers\SubAdmin\SubAdminJobProcController::class, 'index'])->name('subadmin.jobproc.index');
+    Route::get('/jobproc/jobrequests', [Controllers\SubAdmin\SubAdminJobProcController::class, 'getJobRequests'])->name('subadmin.jobproc.jobrequests');
+    Route::get('/jobproc/prospects', [Controllers\SubAdmin\SubAdminJobProcController::class, 'getProspects'])->name('subadmin.jobproc.prospects');
+    Route::post('/jobproc/store', [Controllers\SubAdmin\SubAdminJobProcController::class, 'store'])->name('subadmin.jobproc.store');
+    Route::post('/jobproc/import', [Controllers\SubAdmin\SubAdminJobProcController::class, 'import'])->name('subadmin.jobproc.import');
+    Route::post('/jobproc/{job_request}/profile-image/generate-uniform', [Controllers\SubAdmin\SubAdminJobProcController::class, 'generateProfileImageUniform'])->name('subadmin.jobproc.profile_image_generate');
+    Route::post('/jobproc/{job_request}/profile-image/approve', [Controllers\SubAdmin\SubAdminJobProcController::class, 'approveProfileImage'])->name('subadmin.jobproc.profile_image_approve');
+    Route::get('/jobproc/{job_request}/price-change-requests', [Controllers\SubAdmin\SubAdminJobProcController::class, 'priceChangeRequests'])->name('subadmin.jobproc.price_change_requests');
+    Route::post('/jobproc/price-change-requests/{price_change_request}/approve', [Controllers\SubAdmin\SubAdminJobProcController::class, 'approvePriceChangeRequest'])->name('subadmin.jobproc.price_change_approve');
+    Route::post('/jobproc/price-change-requests/{price_change_request}/reject', [Controllers\SubAdmin\SubAdminJobProcController::class, 'rejectPriceChangeRequest'])->name('subadmin.jobproc.price_change_reject');
+    Route::get('/jobproc/{id}', [Controllers\SubAdmin\SubAdminJobProcController::class, 'show'])->name('subadmin.jobproc.show');
+    Route::get('/jobproc/{id}/edit', [Controllers\SubAdmin\SubAdminJobProcController::class, 'edit'])->name('subadmin.jobproc.edit');
+    Route::put('/jobproc/{id}', [Controllers\SubAdmin\SubAdminJobProcController::class, 'update'])->name('subadmin.jobproc.update');
+    Route::delete('/jobproc/{id}', [Controllers\SubAdmin\SubAdminJobProcController::class, 'destroy'])->name('subadmin.jobproc.destroy');
+    
+    // Leegality routes for JobProc
+    Route::get('/jobproc/{job_request}/leegality/preview-agreement', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'previewAgreement'])->name('subadmin.jobproc.leegality_preview_agreement');
+    Route::post('/jobproc/{job_request}/leegality/send', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'send'])->name('subadmin.jobproc.leegality_send');
+    Route::post('/jobproc/{job_request}/leegality/refresh', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'refresh'])->name('subadmin.jobproc.leegality_refresh');
+    Route::post('/jobproc/{job_request}/leegality/add-my-signature', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'addMySignature'])->name('subadmin.jobproc.leegality_add_my_signature');
+    Route::get('/jobproc/{job_request}/leegality/test-add-my-signature', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'testAddMySignature'])->name('subadmin.jobproc.leegality_test_add_my_signature');
+    Route::get('/jobproc/{job_request}/leegality/{signature}/view-signed', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'viewSigned'])->name('subadmin.jobproc.leegality_view_signed');
+    Route::get('/jobproc/{job_request}/leegality/{signature}/download-signed', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'downloadSigned'])->name('subadmin.jobproc.leegality_download_signed');
+    Route::get('/jobproc/{job_request}/leegality/{signature}/download-audit', [Controllers\SubAdmin\SubAdminFreelancerLeegalitySignatureController::class, 'downloadAudit'])->name('subadmin.jobproc.leegality_download_audit');
+
+    // Doctor
+    Route::get('/doctor-registration-otp-logs', [Controllers\SubAdmin\SubAdminDoctorRegistrationOtpLogController::class, 'index'])->name('subadmin.doctor_registration_otp_logs.index');
+    Route::get('/doctor-requests', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'index'])->name('subadmin.doctor_requests.index');
+    Route::get('/doctor-requests/data', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'data'])->name('subadmin.doctor_requests.data');
+    Route::get('/doctor-requests/{doctor_request}/view-modal', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'viewModal'])->name('subadmin.doctor_requests.view_modal');
+    Route::put('/doctor-requests/{doctor_request}/registration-profile', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updateRegistrationProfile'])->name('subadmin.doctor_requests.registration_profile_update');
+    Route::post('/doctor-requests/{doctor_request}/generate-about', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'generateRegistrationAbout'])->name('subadmin.doctor_requests.generate_about');
+    Route::post('/doctor-requests/{doctor_request}/profile-image/generate-coat', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'generateProfileImageCoat'])->name('subadmin.doctor_requests.profile_image_generate');
+    
+    Route::get('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'index'])->name('subadmin.doctor_consultation_services.index');
+    Route::get('/doctor-consultation-services/data', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'data'])->name('subadmin.doctor_consultation_services.data');
+    Route::get('/doctor-consultation-services/{service}/view-modal', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'viewModal'])->name('subadmin.doctor_consultation_services.view_modal');
+    Route::put('/doctor-consultation-services/{service}/approve', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'approve'])->name('subadmin.doctor_consultation_services.approve');
+    Route::put('/doctor-consultation-services/{service}/reject', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'reject'])->name('subadmin.doctor_consultation_services.reject');
+
+    // Whatsapp
+    Route::get('all-whatsapp-chats', [Controllers\WhatsappMsgController::class, 'all_whatsapp_chats_index'])->name('subadmin.all_whatsapp_chats.index');
+    Route::get('subadmin/all-whatsapp-chats/numbers', [Controllers\WhatsappMsgController::class, 'get_all_whatsapp_numbers'])->name('subadmin.all_whatsapp_chats.numbers');
+    Route::get('subadmin/all-whatsapp-chats/messages/{number}', [Controllers\WhatsappMsgController::class, 'get_messages_for_number'])->name('subadmin.all_whatsapp_chats.messages');
+    Route::get('subadmin/all-whatsapp-chats/executives/{number}', [Controllers\WhatsappMsgController::class, 'get_executives_for_number'])->name('subadmin.all_whatsapp_chats.executives');
+    Route::post('subadmin/all-whatsapp-chats/mark-read/{number}', [Controllers\WhatsappMsgController::class, 'markMessagesAsRead'])->name('subadmin.all_whatsapp_chats.mark_read');
+
+    // Referral Leads
+    Route::get('/referral-leads', [Controllers\SubAdmin\SubAdminReferralLeadController::class, 'index'])->name('subadmin.referral_leads.index');
+    Route::post('/referral-leads/commission', [Controllers\SubAdmin\SubAdminReferralLeadController::class, 'updateCommission'])->name('subadmin.referral_leads.commission');
+
+    // Vendor Payments
+    Route::get('/vendor-payments', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'index'])->name('subadmin.vendor_payments.index');
+    Route::get('/vendor-payments/history', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'vendorHistory'])->name('subadmin.vendor_payments.history');
+    Route::post('/vendor-payments', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'store'])->name('subadmin.vendor_payments.store');
+    Route::get('/vendor-payments/{id}', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'show'])->name('subadmin.vendor_payments.show');
+    Route::get('/vendor-payments/{id}/edit', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'edit'])->name('subadmin.vendor_payments.edit');
+    Route::put('/vendor-payments/{id}', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'update'])->name('subadmin.vendor_payments.update');
+    Route::delete('/vendor-payments/{id}', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'destroy'])->name('subadmin.vendor_payments.destroy');
+    Route::get('/vendor-payments/vendor/{vendorId}', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'getVendorPayments'])->name('subadmin.vendor_payments.vendor');
+    Route::get('/vendor-payments/vendor/{vendorId}/statement', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'statement'])->name('subadmin.vendor_payments.statement');
+    Route::get('/vendor-payments/stats', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'getPaymentStats'])->name('subadmin.vendor_payments.stats');
+    Route::get('/vendor-payments/{id}/screenshot', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'downloadScreenshot'])->name('subadmin.vendor_payments.screenshot');
+    Route::get('/vendor-payments/{id}/invoice', [Controllers\SubAdmin\SubAdminVendorPaymentController::class, 'invoice'])->name('subadmin.vendor_payments.invoice');
+
+    // Freelancer Payments
+    Route::get('/freelancer-payments', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'index'])->name('subadmin.freelancer_payments.index');
+    Route::post('/freelancer-payments', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'store'])->name('subadmin.freelancer_payments.store');
+    Route::get('/freelancer-payments/{id}', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'show'])->name('subadmin.freelancer_payments.show');
+    Route::get('/freelancer-payments/{id}/edit', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'edit'])->name('subadmin.freelancer_payments.edit');
+    Route::put('/freelancer-payments/{id}', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'update'])->name('subadmin.freelancer_payments.update');
+    Route::delete('/freelancer-payments/{id}', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'destroy'])->name('subadmin.freelancer_payments.destroy');
+    Route::get('/freelancer-payments/{id}/invoice', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'invoice'])->name('subadmin.freelancer_payments.invoice');
+    Route::get('/freelancer-payments/statement/{freelancerId}', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'statement'])->name('subadmin.freelancer_payments.statement');
+    Route::get('/freelancer-payments/freelancer/{freelancerId}', [Controllers\SubAdmin\SubAdminFreelancerPaymentController::class, 'getFreelancerPayments'])->name('subadmin.freelancer_payments.freelancer');
+
+    // Locations
+    Route::get('/locations/bulk-template', [Controllers\SubAdmin\SubAdminLocationController::class, 'downloadBulkTemplate'])->name('subadmin.locations.bulk-template');
+    Route::post('/locations/bulk-import', [Controllers\SubAdmin\SubAdminLocationController::class, 'bulkImport'])->name('subadmin.locations.bulk-import');
+    Route::get('/locations/service-rates', [Controllers\SubAdmin\SubAdminLocationController::class, 'getServiceRates'])->name('subadmin.locations.service-rates');
+    Route::resource('locations', Controllers\SubAdmin\SubAdminLocationController::class)->names('subadmin.locations');
+
+});

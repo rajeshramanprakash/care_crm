@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class StaffChatController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:view_whatsapp');
+    }
+
     public function index()
     {
         // Get all sales staff users with their chat participants

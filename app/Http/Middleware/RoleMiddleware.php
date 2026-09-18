@@ -18,7 +18,7 @@ class RoleMiddleware
      * @param  string  $role
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         if (!Auth::check()) {
             return redirect()->route('home')->with('error', 'Please log in first');
@@ -39,8 +39,8 @@ class RoleMiddleware
             return redirect()->route('home')->with('error', 'Invalid role. Please log in again.');
         }
 
-        if ($userRole->name !== $role) {
-            Log::warning('Role mismatch. Required: ' . $role . ', User has: ' . $userRole->name);
+        if (!in_array($userRole->name, $roles)) {
+            Log::warning('Role mismatch. Required: ' . implode(',', $roles) . ', User has: ' . $userRole->name);
             return redirect($this->getDashboardRouteForRole($userRole->name))
                 ->with('error', 'Unauthorized access to this section');
         }
@@ -62,7 +62,8 @@ class RoleMiddleware
             'Sales Manager' => 'manager.dashboard',
             'Operation Manager' => 'operation-manager.dashboard',
             'Operation' => 'operation.dashboard',
-            'B2B' => 'b2b.dashboard'
+            'B2B' => 'b2b.dashboard',
+            'Sub Admin' => 'subadmin.dashboard'
         ];
 
         return route($routes[$role] ?? 'home');
