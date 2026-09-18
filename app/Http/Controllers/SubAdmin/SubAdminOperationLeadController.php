@@ -227,17 +227,23 @@ class SubAdminOperationLeadController extends Controller
                 return $lead->last_call_status_display;
             })
             ->addColumn('action', function($lead) {
-                return '
-                    <div class="action-dropdown">
-                        <button class="action-dropdown-btn" onclick="event.stopPropagation(); toggleDropdown(this)">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="action-dropdown-menu">
-                            <button class="edit-btn" data-id="'.$lead->id.'"><i class="fas fa-pen icon-edit"></i> Edit</button>
-                            <a href="'.route('subadmin.operation_leads.show', $lead->id).'" class="view-btn" target="_blank"><i class="fas fa-eye icon-view"></i> View</a>
-                            <button class="delete-btn" data-id="'.$lead->id.'"><i class="fas fa-trash icon-delete"></i> Delete</button>
-                        </div>
-                    </div>';
+                $user = auth()->user();
+                $html = '<div class="action-dropdown">
+                            <button class="action-dropdown-btn" onclick="event.stopPropagation(); toggleDropdown(this)">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="action-dropdown-menu">';
+                if ($user->can('edit_operation_leads')) {
+                    $html .= '<button class="edit-btn" data-id="'.$lead->id.'"><i class="fas fa-pen icon-edit"></i> Edit</button>';
+                }
+                if ($user->can('view_operation_leads_details')) {
+                    $html .= '<a href="'.route('subadmin.operation_leads.show', $lead->id).'" class="view-btn" target="_blank"><i class="fas fa-eye icon-view"></i> View</a>';
+                }
+                if ($user->can('delete_operation_leads')) {
+                    $html .= '<button class="delete-btn" data-id="'.$lead->id.'"><i class="fas fa-trash icon-delete"></i> Delete</button>';
+                }
+                $html .= '</div></div>';
+                return $html;
             })
             ->rawColumns(['screenshot','action','available_vendors_count'])
             ->make(true);

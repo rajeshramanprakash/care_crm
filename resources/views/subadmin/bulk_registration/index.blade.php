@@ -520,7 +520,7 @@
                     
                     // Fetch cities via AJAX
                     $.ajax({
-                        url: '{{ route('subadmin.bulk_registration.cities_by_tier") }}',
+                        url: '{{ route("subadmin.bulk_registration.cities_by_tier") }}',
                         type: 'GET',
                         data: { tier: tier },
                         success: function(response) {

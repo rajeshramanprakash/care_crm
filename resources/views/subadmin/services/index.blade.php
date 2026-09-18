@@ -7,9 +7,11 @@
     <div class="card dcs-table-card">
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
             <h3 class="card-title mb-0">Services</h3>
+            @can('create_services')
             <a href="{{ route('subadmin.services.create') }}" class="btn btn-light btn-sm font-weight-bold">
                 <i class="fas fa-plus mr-1"></i> Add New Service
             </a>
+            @endcan
         </div>
         <div class="card-body">
             @if(session('success'))
@@ -69,9 +71,12 @@
                                     <td>{{ (int) ($service->sub_services_count ?? 0) }}</td>
                                     <td>{{ $service->description ? Str::limit($service->description, 40) : '—' }}</td>
                                     <td class="text-nowrap">
+                                        @can('edit_services')
                                         <a href="{{ route('subadmin.services.edit', $service) }}" class="btn btn-link p-0 m-0" title="Edit">
                                             <i class="fas fa-edit text-primary" style="font-size: 18px;"></i>
                                         </a>
+                                        @endcan
+                                        @can('delete_services')
                                         <form action="{{ route('subadmin.services.destroy', $service) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
@@ -79,6 +84,7 @@
                                                 <i class="fas fa-trash-alt text-danger" style="font-size: 18px;"></i>
                                             </button>
                                         </form>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach

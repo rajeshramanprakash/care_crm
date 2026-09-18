@@ -203,6 +203,7 @@
                                                     'edit' => 'edit_b2b_individual',
                                                     'delete' => 'delete_b2b_individual'
                                                 ],
+                                                'B2B Hub' => ['access' => 'view_b2b_hub'],
                                                 'Insurers' => [
                                                     'access' => 'view_insurers',
                                                     'create' => 'create_insurer',
@@ -217,9 +218,25 @@
                                                 ],
                                                 'Break Logs' => ['access' => 'view_break_logs'],
                                                 'Duty Logs' => ['access' => 'view_duty_logs'],
-                                                'Operation Leads' => ['access' => 'view_operation_leads'],
-                                                'Locations' => ['access' => 'view_locations'],
-                                                'Services' => ['access' => 'view_services'],
+                                                'Operation Leads' => [
+                                                    'access' => 'view_operation_leads',
+                                                    'view_details' => 'view_operation_leads_details',
+                                                    'create' => 'create_operation_leads',
+                                                    'edit' => 'edit_operation_leads',
+                                                    'delete' => 'delete_operation_leads'
+                                                ],
+                                                'Locations' => [
+                                                    'access' => 'view_locations',
+                                                    'create' => 'create_locations',
+                                                    'edit' => 'edit_locations',
+                                                    'delete' => 'delete_locations'
+                                                ],
+                                                'Services' => [
+                                                    'access' => 'view_services',
+                                                    'create' => 'create_services',
+                                                    'edit' => 'edit_services',
+                                                    'delete' => 'delete_services'
+                                                ],
                                                 'Registration Languages' => ['access' => 'view_languages'],
                                                 'Agreements' => ['access' => 'view_agreements'],
                                                 'Doctor Requests' => ['access' => 'view_doctor_requests'],

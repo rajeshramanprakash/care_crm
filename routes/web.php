@@ -519,6 +519,65 @@ Route::post('whatsapp_msg_status', [Controllers\WhatsappMsgController::class, 'w
     Route::get('admin/all-whatsapp-chats/numbers', [WhatsappMsgController::class, 'get_all_whatsapp_numbers'])->name('admin.all_whatsapp_chats.numbers');
     Route::get('admin/all-whatsapp-chats/messages/{number}', [WhatsappMsgController::class, 'get_messages_for_number'])->name('admin.all_whatsapp_chats.messages');
     Route::get('admin/all-whatsapp-chats/executives/{number}', [App\Http\Controllers\WhatsappMsgController::class, 'get_executives_for_number'])->name('admin.all_whatsapp_chats.executives');
+
+    // --- Missing SubAdmin Routes ---
+    Route::post('doctor-referral-users', [Controllers\SubAdmin\SubAdminDoctorReferralUserController::class, 'store'])->name('subadmin.doctor_referral_users.store');
+    
+    // Doctor Requests (remaining)
+    Route::post('/doctor-requests/{doctor_request}/profile-image/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approveProfileImage'])->name('subadmin.doctor_requests.profile_image_approve');
+    Route::get('/doctor-requests/{doctor_request}/website-reviews/panel', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsPanel'])->name('subadmin.doctor_requests.website_reviews_panel');
+    Route::post('/doctor-requests/{doctor_request}/website-reviews', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsStore'])->name('subadmin.doctor_requests.website_reviews_store');
+    Route::delete('/doctor-requests/{doctor_request}/website-reviews/{review}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsDestroy'])->name('subadmin.doctor_requests.website_reviews_destroy');
+    Route::get('/doctor-requests/{doctor_request}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'show'])->name('subadmin.doctor_requests.show');
+    Route::get('/doctor-requests/{doctor_request}/pricing-edit', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingEdit'])->name('subadmin.doctor_requests.pricing_edit');
+    Route::put('/doctor-requests/{doctor_request}/pricing', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePricing'])->name('subadmin.doctor_requests.pricing_update');
+    Route::get('/doctor-requests/{doctor_request}/price-change-requests', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'priceChangeRequests'])->name('subadmin.doctor_requests.price_change_requests');
+    Route::post('/doctor-requests/price-change-requests/{price_change_request}/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approvePriceChangeRequest'])->name('subadmin.doctor_requests.price_change_approve');
+    Route::post('/doctor-requests/price-change-requests/{price_change_request}/reject', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'rejectPriceChangeRequest'])->name('subadmin.doctor_requests.price_change_reject');
+    Route::get('/doctor-requests/{doctor_request}/pricing-logs', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingLogs'])->name('subadmin.doctor_requests.pricing_logs');
+    Route::post('/doctor-requests/{doctor_request}/status', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updateStatus'])->name('subadmin.doctor_requests.update_status');
+    Route::post('/doctor-requests/regenerate-online-meetings', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'regenerateOnlineMeetingLinks'])->name('subadmin.doctor_requests.regenerate_online_meetings');
+    Route::post('/doctor-requests/portal-lead-commission', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePortalLeadCommission'])->name('subadmin.doctor_requests.portal_lead_commission');
+
+    // Doctor Consultation Services (remaining)
+    Route::get('/doctor-consultation-services/create', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'create'])->name('subadmin.doctor_consultation_services.create');
+    Route::post('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'store'])->name('subadmin.doctor_consultation_services.store');
+
+    // Bulk Registration
+    Route::post('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'store'])->name('subadmin.bulk_registration.store');
+
+    // Vendor / Job Requests (SubAdminJobProcController?)
+    Route::get('/jobproc/jobrequests', [Controllers\SubAdmin\SubAdminJobProcController::class, 'jobrequests'])->name('subadmin.jobproc.jobrequests');
+    Route::post('/jobproc', [Controllers\SubAdmin\SubAdminJobProcController::class, 'store'])->name('subadmin.jobproc.store');
+    
+    // Modules with no SubAdmin Controllers (Fallback to Admin controllers to prevent RouteNotFoundException in sidebar)
+    // Chat
+    Route::get('/chat', [App\Http\Controllers\Admin\ChatController::class, 'index'])->name('subadmin.chat.index');
+    Route::get('/chat/messages/{userId}', [App\Http\Controllers\Admin\ChatController::class, 'getMessages'])->name('subadmin.chat.messages');
+    Route::post('/chat/send', [App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('subadmin.chat.send');
+    Route::get('/chat/unread-counts', [App\Http\Controllers\Admin\ChatController::class, 'getUnreadCounts'])->name('subadmin.chat.unread-counts');
+    Route::post('chat/send-attachment', [App\Http\Controllers\Admin\ChatController::class, 'sendAttachment'])->name('subadmin.chat.send.attachment');
+
+    // Cases
+    Route::get('/case', [App\Http\Controllers\Admin\CaseController::class, 'index'])->name('subadmin.case.index');
+    Route::post('/cases/save-claimno', [App\Http\Controllers\Admin\CaseController::class, 'saveClaimNo'])->name('subadmin.cases.save-claimno');
+    Route::post('/cases/save-tpa', [App\Http\Controllers\Admin\CaseController::class, 'saveTpa'])->name('subadmin.cases.save-tpa');
+    
+    // Courier
+    Route::get('/courier', [App\Http\Controllers\Admin\CourierController::class, 'index'])->name('subadmin.courier.index');
+    Route::post('/courier/case/update', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdate'])->name('subadmin.courier.case.update');
+    Route::post('/courier/case/update/post-one', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdatePostOne'])->name('subadmin.courier.case.update.post_one');
+    Route::post('/courier/case/update/post-two', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdatePostTwo'])->name('subadmin.courier.case.update.post_two');
+    Route::post('/post/update', [App\Http\Controllers\Admin\CourierController::class, 'postUpdate'])->name('subadmin.post.update');
+    Route::post('/post/two/update', [App\Http\Controllers\Admin\CourierController::class, 'postTwoUpdate'])->name('subadmin.post.two.update');
+
+    // Query
+    Route::get('/query', [App\Http\Controllers\Admin\QueryController::class, 'index'])->name('subadmin.query.index');
+
+    // Tickets
+    Route::get('/tickets', [App\Http\Controllers\Admin\TicketController::class, 'index'])->name('subadmin.tickets.index');
+    Route::get('/tickets/statistics', [App\Http\Controllers\Admin\TicketController::class, 'statistics'])->name('subadmin.tickets.statistics');
+
     Route::post('whatsapp-group/add-executive', [App\Http\Controllers\WhatsappMsgController::class, 'addExecutiveToWhatsappGroup'])->name('whatsapp_group.add_executive');
     Route::post('whatsapp-group/remove-executive', [App\Http\Controllers\WhatsappMsgController::class, 'removeExecutiveFromWhatsappGroup'])->name('whatsapp_group.remove_executive');
     Route::post('admin/all-whatsapp-chats/mark-read/{number}', [App\Http\Controllers\WhatsappMsgController::class, 'markMessagesAsRead'])->name('admin.all_whatsapp_chats.mark_read');
@@ -1689,6 +1748,9 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
     Route::get('corporate-individual-b2b', [Controllers\SubAdmin\SubAdminCorporateIndividualHubController::class, 'index'])->name('subadmin.corporate_individual.hub');
 
     // Users
+    Route::get('users/getUsers', [Controllers\SubAdmin\SubAdminUserController::class, 'getUsers'])->name('subadmin.users.getUsers');
+    Route::get('users/manage/{id}', [Controllers\SubAdmin\SubAdminUserController::class, 'manage'])->name('subadmin.users.manage');
+    Route::post('users/manage/{id?}', [Controllers\SubAdmin\SubAdminUserController::class, 'manage_process'])->name('subadmin.users.manage_process');
     Route::resource('users', Controllers\SubAdmin\SubAdminUserController::class)->names('subadmin.users');
 
     // Insurers & Brokers
@@ -1707,7 +1769,7 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
         $user = \App\Models\User::findOrFail($userId);
         $breakLogs = \App\Models\BreakLog::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
         return view('subadmin.break_logs.user_logs', compact('breakLogs', 'user'));
-    })->name('subadmin.break_logs.user_logs');
+    })->name('subadmin.break_logs.user');
 
     // Duty Logs
     Route::get('/duty-logs', function() {
@@ -1719,7 +1781,7 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
         $user = \App\Models\User::findOrFail($userId);
         $dutyLogs = \App\Models\DutyLogs::where('user_id', $userId)->orderBy('created_at', 'desc')->paginate(20);
         return view('subadmin.duty_logs.user_logs', compact('dutyLogs', 'user'));
-    })->name('subadmin.duty_logs.user_logs');
+    })->name('subadmin.duty_logs.user');
     Route::get('corporate-accounts', [Controllers\SubAdmin\SubAdminCorporateUserController::class, 'index'])->name('subadmin.corporate-accounts.index');
     Route::get('corporate-employees', [Controllers\SubAdmin\SubAdminCorporateEmployeeController::class, 'index'])->name('subadmin.corporate-employees.index');
     // --- BATCH 4 ROUTES ---

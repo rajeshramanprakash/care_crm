@@ -29,9 +29,11 @@
                             <button type="button" class="btn btn-success btn-sm" id="openBulkUploadModal" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
                                 <i class="fas fa-upload"></i> Bulk Upload
                             </button>
+                            @can('create_locations')
                             <a href="{{ route('subadmin.locations.create') }}" class="btn btn-primary btn-sm">
                                 Add New Location
                             </a>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -109,9 +111,12 @@
                                         </td>
                                         <td style="font-size: 14px; text-align:center;">{{ $location->created_at->format('Y-m-d H:i:s') }}</td>
                                         <td style="font-size: 14px; text-align:center;">
+                                            @can('edit_locations')
                                             <a href="{{ route('subadmin.locations.edit', $location) }}" class="btn btn-link p-0 m-0" title="Edit">
                                                 <i class="fas fa-map-marker-alt text-primary" style="font-size: 18px;"></i>
                                             </a>
+                                            @endcan
+                                            @can('delete_locations')
                                             <form action="{{ route('subadmin.locations.destroy', $location) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -119,6 +124,7 @@
                                                     <i class="fas fa-trash-alt text-danger" style="font-size: 18px;"></i>
                                                 </button>
                                             </form>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @endforeach

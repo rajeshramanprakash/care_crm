@@ -138,12 +138,14 @@ $route_name = Route::currentRouteName();
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            @can('view_b2b_hub')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.corporate_individual.hub') }}" class="nav-link {{ strpos($route_name, 'corporate_individual') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Hub</p>
                                 </a>
                             </li>
+                            @endcan
                             @can('view_b2b_corporate')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.b2b_corporate.index') }}" class="nav-link {{ strpos($route_name, 'b2b_corporate') !== false ? 'active' : '' }}">

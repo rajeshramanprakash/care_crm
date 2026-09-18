@@ -56,7 +56,18 @@ class PermissionSeeder extends Seeder
             'view_technical_support',
             'view_user',
             'view_vendors',
-            'view_whatsapp'
+            'view_whatsapp',
+            'view_b2b_hub',
+            'view_operation_leads_details',
+            'create_operation_leads',
+            'edit_operation_leads',
+            'delete_operation_leads',
+            'create_locations',
+            'edit_locations',
+            'delete_locations',
+            'create_services',
+            'edit_services',
+            'delete_services'
 ];
 
         foreach ($permissions as $permission) {
