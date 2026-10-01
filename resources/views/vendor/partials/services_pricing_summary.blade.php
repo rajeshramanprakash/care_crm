@@ -14,47 +14,8 @@
         VendorServicePriceChangeRequest::TYPE_ONETIME => 'One-time',
     ];
 
-    $activeTempRules = \App\Models\BulkPricingRule::where('status', 1)
-        ->where('time_period', 'temporary')
-        ->where('pricing_type', 'vendor')
-        ->get();
-        
-    $tier1Cities = \App\Models\Location::where('tier', 'Tier 1')->pluck('name')->toArray();
     $locationName = $vendor->location ?? '';
-
-    $getMatchingTempRule = static function($serviceId, $subId, $modeKey) use ($activeTempRules, $locationName, $tier1Cities) {
-        foreach ($activeTempRules as $rule) {
-            if ($rule->service_id && (int)$rule->service_id !== (int)$serviceId) continue;
-            if ($rule->sub_service_id && (int)$rule->sub_service_id !== (int)$subId) continue;
-            
-            $mappedMode = match ($modeKey) {
-                '12hr' => '12_hours',
-                '24hr' => '24_hours',
-                'onetime' => 'one_time',
-                default => $modeKey
-            };
-            if (!empty($rule->mode_type)) {
-                if ($rule->mode_type === 'both' && in_array($mappedMode, ['12_hours', '24_hours'])) {
-                    // Matches both 12 and 24 hours
-                } else if ($rule->mode_type !== $mappedMode) {
-                    continue;
-                }
-            }
-            
-            if ($rule->city_filter && $rule->city_filter !== 'all') {
-                if ($rule->city_filter === 'tier_1') {
-                    if (!in_array($locationName, $tier1Cities)) continue;
-                } else {
-                    if (strtolower($locationName) !== strtolower($rule->city_filter)) continue;
-                }
-            }
-            
-            if ($rule->time_period_start_date) {
-                return $rule;
-            }
-        }
-        return null;
-    };
+    $priceFieldForType = static fn ($typeKey) => str_contains($typeKey, '12hr') ? 'price_12hr' : (str_contains($typeKey, '24hr') ? 'price_24hr' : 'price_onetime');
 @endphp
 
 @if(count($vendorBlocks ?? []) === 0)
@@ -114,40 +75,19 @@
                                         $reqKey = $subId.'|'.$typeKey;
                                         $latestReq = $requestsByKey[$reqKey] ?? null;
                                         $isPending = $latestReq && $latestReq->status === VendorServicePriceChangeRequest::STATUS_PENDING;
-                                        $tempRule = $getMatchingTempRule($serviceId, $subId, $typeKey);
-                                        
-                                        if ($tempRule) {
-                                            $now = \Carbon\Carbon::now();
-                                            $start = \Carbon\Carbon::parse($tempRule->time_period_start_date);
-                                            $end = $tempRule->time_period_end_date ? \Carbon\Carbon::parse($tempRule->time_period_end_date) : null;
-                                            $isActive = $now->gte($start) && (!$end || $now->lte($end));
-
-                                            $priceRecord = \App\Models\VendorServicePrice::where('vendor_id', $vendor->id)
-                                                ->where('service_id', $serviceId)
-                                                ->where('service_sub_service_id', $subId)
-                                                ->first();
-                                            if ($priceRecord) {
-                                                $col = null;
-                                                if (str_contains($typeKey, '12hr')) $col = 'original_price_12hr';
-                                                elseif (str_contains($typeKey, '24hr')) $col = 'original_price_24hr';
-                                                elseif (str_contains($typeKey, 'onetime')) $col = 'original_price_onetime';
-                                                
-                                                if ($col && isset($priceRecord->{$col}) && $priceRecord->{$col} !== null) {
-                                                    $current = $priceRecord->{$col};
-                                                }
-                                            }
-                                        }
+                                        $tempPrice = \App\Services\BulkPricing\BulkPricingTemporaryDisplay::provider('vendor', $vendor, $locationName, $serviceId, $subId, $priceFieldForType($typeKey), $current);
                                     @endphp
                                     <tr>
                                         <td>{{ $typeLabels[$typeKey] ?? $typeKey }}</td>
                                         <td><strong>{{ $fmtPrice($current) }}</strong></td>
                                         <td>
-                                            @if($tempRule)
-                                                <div class="vd-temp-badge {{ $isActive ? 'vd-temp-badge--active' : 'vd-temp-badge--future' }}">
-                                                    <strong>₹{{ number_format($tempRule->value, 2) }}</strong>
+                                            @if($tempPrice)
+                                                <div class="vd-temp-badge vd-temp-badge--active">
+                                                    <strong>₹{{ number_format($tempPrice['temp'], 2) }}</strong>
+                                                    @if($tempPrice['normal'] !== null)<small class="d-block text-muted">Normal price: ₹{{ number_format($tempPrice['normal'], 2) }}</small>@endif
                                                     <small class="d-block text-muted">
-                                                        {{ \Carbon\Carbon::parse($tempRule->time_period_start_date)->format('M d, h:i A') }} - 
-                                                        {{ $tempRule->time_period_end_date ? \Carbon\Carbon::parse($tempRule->time_period_end_date)->format('M d, h:i A') : 'Ongoing' }}
+                                                        {{ $tempPrice['start'] ? $tempPrice['start']->format('M d, h:i A') : '' }} -
+                                                        {{ $tempPrice['end'] ? $tempPrice['end']->format('M d, h:i A') : 'Ongoing' }}
                                                     </small>
                                                 </div>
                                             @else

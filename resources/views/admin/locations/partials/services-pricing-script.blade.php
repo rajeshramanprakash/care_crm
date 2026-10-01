@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initContainer('vendor-services-container', 'vendor_services');
     initContainer('freelancer-services-container', 'freelancer_services');
+    initContainer('website-services-container', 'website_services');
 
     document.querySelectorAll('.loc-add-provider-service').forEach(function (btn) {
         btn.addEventListener('click', function () {

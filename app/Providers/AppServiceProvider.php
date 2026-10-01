@@ -3,12 +3,16 @@
 namespace App\Providers;
 
 use App\Models\CustomerChatMessage;
+use App\Models\DoctorRequest;
+use App\Models\JobRequest;
 use App\Models\Lead;
 use App\Models\OperationLead;
+use App\Models\Vendor;
 use App\Observers\CustomerChatMessageObserver;
 use App\Observers\LeadObserver;
 use App\Observers\OperationLeadObserver;
 use App\Services\B2BCorporateChatService;
+use App\Services\BulkPricing\BulkPricingRuleApplier;
 use App\Services\UserAssignmentService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
@@ -35,6 +39,13 @@ class AppServiceProvider extends ServiceProvider
         Lead::observe(LeadObserver::class);
         OperationLead::observe(OperationLeadObserver::class);
         CustomerChatMessage::observe(CustomerChatMessageObserver::class);
+
+        // Prices / services are saved after the row is created, so bulk pricing rules run once the request finishes.
+        foreach ([Vendor::class, JobRequest::class, DoctorRequest::class] as $providerModel) {
+            $providerModel::created(function ($model) {
+                $this->app->terminating(fn () => BulkPricingRuleApplier::applyToNewRegistration($model));
+            });
+        }
 
         View::composer([
             'admin.layouts.sidebar',

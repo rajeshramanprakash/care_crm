@@ -5,6 +5,7 @@
     }
     $vendorServiceRows = $vendorServiceRows ?? [];
     $freelancerServiceRows = $freelancerServiceRows ?? [];
+    $websiteServiceRows = $websiteServiceRows ?? [];
     $servicesJson = ($doctorConsultationServices ?? collect())->map(function ($svc) {
         return [
             'id' => (int) $svc->id,
@@ -33,6 +34,7 @@
         <button type="button" class="loc-pricing-pill active" data-pricing-tab="doctor">Doctor Pricing</button>
         <button type="button" class="loc-pricing-pill" data-pricing-tab="vendor">Vendor Pricing</button>
         <button type="button" class="loc-pricing-pill" data-pricing-tab="freelancer">Freelancer Pricing</button>
+        <button type="button" class="loc-pricing-pill" data-pricing-tab="website">Website Pricing</button>
     </div>
     <p class="loc-pricing-hint mb-2">
         Har location ki alag prices save hoti hain. <strong>Doctor</strong>: service select karein — agar us service ke andar sub-services hain to <strong>sub-service select karke</strong> Online / Home Visit / Clinic ki price set karein (wo price us sub-service ki hogi). Sub-service na ho to service-level price save hogi.
@@ -74,6 +76,17 @@
             'rows' => $freelancerServiceRows,
             'panelTitle' => 'freelancer service',
             'panelHint' => 'Is location ke liye freelancer services — sub-service ho to uski alag 12hr, 24hr, one-time price set karein.',
+        ])
+    </div>
+
+    <div class="loc-pricing-panel" id="loc_pricing_panel_website" data-pricing-panel="website">
+        @include('admin.locations.partials.provider-pricing-panel', [
+            'inputPrefix' => 'website_services',
+            'containerId' => 'website-services-container',
+            'addBtnId' => 'add-website-service',
+            'rows' => $websiteServiceRows,
+            'panelTitle' => 'website service',
+            'panelHint' => 'Website (careweb) par customer ko dikhne wali general services ki price — sub-service ho to uski alag 12hr, 24hr, one-time price set karein.',
         ])
     </div>
 </div>

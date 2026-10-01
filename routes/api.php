@@ -982,6 +982,7 @@ Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, '
 Route::get('/public/register/languages', [App\Http\Controllers\Auth\RegisterController::class, 'registrationLanguages']);
 Route::get('/public/register/translations/{code}', [App\Http\Controllers\Auth\RegisterController::class, 'registrationTranslations']);
 Route::get('/public/register/location-provider-services', [App\Http\Controllers\Auth\RegisterController::class, 'locationProviderServices']);
+Route::get('/public/website-service-prices', [App\Http\Controllers\Api\PublicWebsiteServicePricingController::class, 'show']);
 Route::post('/public/register/doctor/send-mobile-otp', [App\Http\Controllers\Auth\RegisterController::class, 'sendDoctorMobileOtp'])->middleware('throttle:10,1');
 Route::post('/public/register/doctor/verify-mobile-otp', [App\Http\Controllers\Auth\RegisterController::class, 'verifyDoctorMobileOtp'])->middleware('throttle:20,1');
 Route::post('/public/register/vendor/send-mobile-otp', [App\Http\Controllers\Auth\RegisterController::class, 'sendVendorMobileOtp'])->middleware('throttle:10,1');

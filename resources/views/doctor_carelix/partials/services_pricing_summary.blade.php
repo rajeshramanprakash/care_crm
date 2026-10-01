@@ -94,45 +94,6 @@
         ];
     }
 
-    $activeTempRules = \App\Models\BulkPricingRule::where('status', 1)
-        ->where('time_period', 'temporary')
-        ->where('pricing_type', 'website_doctor')
-        ->get();
-        
-    $tier1Cities = \App\Models\Location::where('tier', 'Tier 1')->pluck('name')->toArray();
-    
-    $normalizeMode = static function($mode) {
-        if (!$mode) return null;
-        return match (strtolower(trim($mode))) {
-            'online' => 'online',
-            'home visit' => 'home_visit',
-            'clinic' => 'clinic_visit',
-            default => strtolower(str_replace(' ', '_', trim($mode)))
-        };
-    };
-
-    $getMatchingTempRule = static function($subId, $modeKey) use ($activeTempRules, $serviceId, $locationName, $normalizeMode, $tier1Cities) {
-        foreach ($activeTempRules as $rule) {
-            if ($rule->service_id && (int)$rule->service_id !== (int)$serviceId) continue;
-            if ($rule->sub_service_id && (int)$rule->sub_service_id !== (int)$subId) continue;
-            
-            $ruleMode = $normalizeMode($rule->mode_type);
-            if ($ruleMode && $ruleMode !== $modeKey) continue;
-            
-            if ($rule->city_filter && $rule->city_filter !== 'all') {
-                if ($rule->city_filter === 'tier_1') {
-                    if (!in_array($locationName, $tier1Cities)) continue;
-                } else {
-                    if (strtolower($locationName) !== strtolower($rule->city_filter)) continue;
-                }
-            }
-            
-            if ($rule->time_period_start_date) {
-                return $rule;
-            }
-        }
-        return null;
-    };
 
     $requestStatusLabel = static function (string $status): string {
         return match ($status) {
@@ -232,64 +193,23 @@
                                     <tr>
                                         <td>{{ $modeLabels[$modeKey] ?? $modeKey }}</td>
                                         @php
-                                            $tempRule = $getMatchingTempRule($subId, $modeKey);
-                                            $now = \Carbon\Carbon::now();
-                                            $isActive = false;
-                                            $isFuture = false;
-                                            $start = null;
-                                            $end = null;
-                                            if ($tempRule) {
-                                                $start = \Carbon\Carbon::parse($tempRule->time_period_start_date);
-                                                $end = $tempRule->time_period_end_date ? \Carbon\Carbon::parse($tempRule->time_period_end_date) : null;
-                                                $isActive = $now->gte($start) && (!$end || $now->lte($end));
-                                                $isFuture = $now->lt($start);
-                                            }
-                                            
-                                            $currentDoctorPrice = $prices['doctor'];
-                                            if ($tempRule && $tempRule->pricing_type === 'doctor_payout') {
-                                                if ((int)$subId === 0) {
-                                                    $colMap = [
-                                                        'online' => 'online_charges',
-                                                        'home_visit' => 'home_visit_charges',
-                                                        'clinic_visit' => 'clinic_consultation_charges'
-                                                    ];
-                                                    if (isset($colMap[$modeKey])) {
-                                                        $origCol = 'original_' . $colMap[$modeKey];
-                                                        if (isset($doctor->{$origCol}) && $doctor->{$origCol} !== null) {
-                                                            $currentDoctorPrice = $doctor->{$origCol};
-                                                        }
-                                                    }
-                                                } else {
-                                                    $pricingArr = $doctor->consultation_pricing;
-                                                    if (is_array($pricingArr)) {
-                                                        foreach ($pricingArr as $row) {
-                                                            if ((int)($row['sub_service_id'] ?? 0) === (int)$subId) {
-                                                                if (isset($row['modes'][$modeKey]['original_doctor_price'])) {
-                                                                    $currentDoctorPrice = $row['modes'][$modeKey]['original_doctor_price'];
-                                                                }
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                            $tempPayout = \App\Services\BulkPricing\BulkPricingTemporaryDisplay::doctor($doctor, 'doctor', $serviceId, (int) $subId, $modeKey);
+                                            $tempWebsite = \App\Services\BulkPricing\BulkPricingTemporaryDisplay::doctor($doctor, 'website', $serviceId, (int) $subId, $modeKey);
                                         @endphp
-                                        <td><strong>{{ $fmtPrice($currentDoctorPrice) }}</strong></td>
+                                        <td><strong>{{ $fmtPrice($prices['doctor']) }}</strong></td>
                                         <td>
-                                            @if($tempRule && ($isActive || $isFuture))
-                                                @php
-                                                    $displayPrice = $tempRule->pricing_type === 'website_doctor' ? $prices['website'] : $prices['doctor'];
-                                                    if (!$displayPrice) {
-                                                        $displayPrice = $tempRule->value; // fallback if it hasn't run yet or is 0
-                                                    }
-                                                @endphp
-                                                <div class="dr-temp-badge {{ $isActive ? 'dr-temp-badge--active' : 'dr-temp-badge--future' }}">
-                                                    <strong>{{ $fmtPrice($displayPrice) }}</strong>
-                                                    <small class="d-block text-muted">
-                                                        From: {{ $start->format('d M, y, h:i A') }}<br>
-                                                        To: {{ $end ? $end->format('d M, y, h:i A') : 'Ongoing' }}
-                                                    </small>
-                                                </div>
+                                            @if($tempPayout || $tempWebsite)
+                                                @foreach(array_filter(['Your charge' => $tempPayout, 'Website fee' => $tempWebsite]) as $tempLabel => $temp)
+                                                    <div class="dr-temp-badge dr-temp-badge--active mb-1">
+                                                        <small class="d-block">{{ $tempLabel }}</small>
+                                                        <strong>{{ $fmtPrice($temp['temp']) }}</strong>
+                                                        @if($temp['normal'] !== null)<small class="d-block text-muted">Normal: {{ $fmtPrice($temp['normal']) }}</small>@endif
+                                                        <small class="d-block text-muted">
+                                                            From: {{ $temp['start'] ? $temp['start']->format('d M, y, h:i A') : '—' }}<br>
+                                                            To: {{ $temp['end'] ? $temp['end']->format('d M, y, h:i A') : 'Ongoing' }}
+                                                        </small>
+                                                    </div>
+                                                @endforeach
                                             @else
                                                 <span class="text-muted">—</span>
                                             @endif

@@ -860,6 +860,8 @@ Route::prefix('/admin')->middleware(['auth', 'role:Admin'])->group(function () {
     Route::get('/bulk-registration', [Controllers\Admin\BulkRegistrationController::class, 'index'])->name('admin.bulk_registration.index');
     Route::post('/bulk-registration', [Controllers\Admin\BulkRegistrationController::class, 'store'])->name('admin.bulk_registration.store');
     Route::get('/bulk-registration/cities-by-tier', [Controllers\Admin\BulkRegistrationController::class, 'getCitiesByTier'])->name('admin.bulk_registration.cities_by_tier');
+    Route::get('/bulk-registration/{bulkPricingRule}/changes', [Controllers\Admin\BulkRegistrationController::class, 'changes'])->name('admin.bulk_registration.changes');
+    Route::post('/bulk-registration/{bulkPricingRule}/stop', [Controllers\Admin\BulkRegistrationController::class, 'stop'])->name('admin.bulk_registration.stop');
     Route::get('/dashboard/sales-leads-stats', [Controllers\Admin\AdminController::class, 'getSalesLeadsStats'])->name('admin.dashboard.sales-leads-stats');
     Route::get('/dashboard/operation-leads-stats', [Controllers\Admin\AdminController::class, 'getOperationLeadsStats'])->name('admin.dashboard.operation-leads-stats');
     Route::get('/dashboard/users-stats', [Controllers\Admin\AdminController::class, 'getUsersStats'])->name('admin.dashboard.users-stats');
@@ -1795,6 +1797,8 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
     Route::get('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'index'])->name('subadmin.bulk_registration.index');
     Route::post('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'store'])->name('subadmin.bulk_registration.store');
     Route::get('/bulk-registration/cities-by-tier', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'getCitiesByTier'])->name('subadmin.bulk_registration.cities_by_tier');
+    Route::get('/bulk-registration/{bulkPricingRule}/changes', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'changes'])->name('subadmin.bulk_registration.changes');
+    Route::post('/bulk-registration/{bulkPricingRule}/stop', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'stop'])->name('subadmin.bulk_registration.stop');
 
     // Vendor and Freelancer (Registration OTP Logs & Vendor CRUD)
     Route::get('/vendor-registration-otp-logs', [Controllers\SubAdmin\SubAdminRegistrationOtpLogController::class, 'index'])

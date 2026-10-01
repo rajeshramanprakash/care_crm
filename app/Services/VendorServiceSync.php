@@ -311,7 +311,7 @@ class VendorServiceSync
     /**
      * @return array{price_12hr: mixed, price_24hr: mixed, price_onetime: mixed}|null
      */
-    private static function jsonBlockOverride(Vendor $vendor, int $serviceId, int $subServiceId): ?array
+    public static function jsonBlockOverride(Vendor $vendor, int $serviceId, int $subServiceId): ?array
     {
         foreach (self::blocksForVendor($vendor) as $block) {
             if ((int) ($block['service_id'] ?? 0) !== $serviceId) {

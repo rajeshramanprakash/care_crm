@@ -39,6 +39,7 @@ class SubAdminLocationController extends Controller
         $tierOptions = $this->tierOptions();
         $vendorServiceRows = $this->providerServiceRowsFromOldInput('vendor_services');
         $freelancerServiceRows = $this->providerServiceRowsFromOldInput('freelancer_services');
+        $websiteServiceRows = $this->providerServiceRowsFromOldInput('website_services');
 
         return view('subadmin.locations.create', compact(
             'services',
@@ -47,7 +48,8 @@ class SubAdminLocationController extends Controller
             'doctorConsultationServices',
             'doctorPricingBlocks',
             'vendorServiceRows',
-            'freelancerServiceRows'
+            'freelancerServiceRows',
+            'websiteServiceRows'
         ));
     }
 
@@ -64,6 +66,7 @@ class SubAdminLocationController extends Controller
         $this->syncDoctorConsultationPrices($location, $request);
         $this->syncProviderServices($location, $request, 'vendor', 'vendor_services');
         $this->syncProviderServices($location, $request, 'freelancer', 'freelancer_services');
+        $this->syncProviderServices($location, $request, 'website', 'website_services');
 
         return redirect()->route('admin.locations.index')
             ->with('success', 'Location created successfully.');
@@ -87,6 +90,8 @@ class SubAdminLocationController extends Controller
             ?: $this->providerServiceRowsFromLocation($location, 'vendor');
         $freelancerServiceRows = $this->providerServiceRowsFromOldInput('freelancer_services')
             ?: $this->providerServiceRowsFromLocation($location, 'freelancer');
+        $websiteServiceRows = $this->providerServiceRowsFromOldInput('website_services')
+            ?: $this->providerServiceRowsFromLocation($location, 'website');
 
         return view('subadmin.locations.edit', compact(
             'location',
@@ -96,7 +101,8 @@ class SubAdminLocationController extends Controller
             'doctorConsultationServices',
             'doctorPricingBlocks',
             'vendorServiceRows',
-            'freelancerServiceRows'
+            'freelancerServiceRows',
+            'websiteServiceRows'
         ));
     }
 
@@ -113,6 +119,7 @@ class SubAdminLocationController extends Controller
         $this->syncDoctorConsultationPrices($location, $request);
         $this->syncProviderServices($location, $request, 'vendor', 'vendor_services');
         $this->syncProviderServices($location, $request, 'freelancer', 'freelancer_services');
+        $this->syncProviderServices($location, $request, 'website', 'website_services');
 
         return redirect()->route('admin.locations.index')
             ->with('success', 'Location updated successfully.');
@@ -193,7 +200,7 @@ class SubAdminLocationController extends Controller
         }
 
         $providerType = $request->input('provider_type', 'vendor');
-        if (! in_array($providerType, ['vendor', 'freelancer'], true)) {
+        if (! in_array($providerType, ['vendor', 'freelancer', 'website'], true)) {
             $providerType = 'vendor';
         }
 
@@ -413,7 +420,7 @@ class SubAdminLocationController extends Controller
     private function providerServicesValidationRules(): array
     {
         $rules = [];
-        foreach (['vendor_services', 'freelancer_services'] as $key) {
+        foreach (['vendor_services', 'freelancer_services', 'website_services'] as $key) {
             $rules[$key] = 'nullable|array|max:100';
             $rules["{$key}.*.service_id"] = 'nullable|integer|exists:services,id';
             $rules["{$key}.*.service_sub_service_id"] = 'nullable|integer|min:0';
@@ -620,6 +627,7 @@ class SubAdminLocationController extends Controller
             'doctor_pricing' => $this->doctorPricingBlocksFromLocation($location),
             'vendor_services' => $this->providerServiceRowsFromLocation($location, 'vendor'),
             'freelancer_services' => $this->providerServiceRowsFromLocation($location, 'freelancer'),
+            'website_services' => $this->providerServiceRowsFromLocation($location, 'website'),
         ]);
     }
 
@@ -635,6 +643,9 @@ class SubAdminLocationController extends Controller
         $this->syncDoctorConsultationPrices($location, $request);
         $this->syncProviderServices($location, $request, 'vendor', 'vendor_services');
         $this->syncProviderServices($location, $request, 'freelancer', 'freelancer_services');
+        if ($request->has('website_services')) {
+            $this->syncProviderServices($location, $request, 'website', 'website_services');
+        }
 
         return response()->json([
             'success' => true,
@@ -655,6 +666,9 @@ class SubAdminLocationController extends Controller
         $this->syncDoctorConsultationPrices($location, $request);
         $this->syncProviderServices($location, $request, 'vendor', 'vendor_services');
         $this->syncProviderServices($location, $request, 'freelancer', 'freelancer_services');
+        if ($request->has('website_services')) {
+            $this->syncProviderServices($location, $request, 'website', 'website_services');
+        }
 
         return response()->json([
             'success' => true,
