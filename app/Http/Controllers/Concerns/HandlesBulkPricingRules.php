@@ -9,7 +9,6 @@ use App\Models\DoctorConsultationServiceSubService;
 use App\Models\Location;
 use App\Models\Service;
 use App\Models\ServiceSubService;
-use App\Services\BulkPricing\BulkPricingRuleApplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -148,29 +147,6 @@ trait HandlesBulkPricingRules
                 'reverted_at' => $c->reverted_at?->format('d M Y, h:i A'),
             ]),
         ]);
-    }
-
-    public function stop(BulkPricingRule $bulkPricingRule)
-    {
-        $rule = $bulkPricingRule;
-        if (! in_array($rule->state, [BulkPricingRule::STATE_SCHEDULED, BulkPricingRule::STATE_ACTIVE], true)) {
-            return redirect()->back()->with('error', "Rule #{$rule->id} already band hai.");
-        }
-
-        if ($rule->isTemporary() && $rule->applied_at) {
-            $count = (new BulkPricingRuleApplier())->revert($rule);
-            $rule->update(['state' => BulkPricingRule::STATE_REVERTED, 'status' => 0, 'reverted_at' => now()]);
-
-            return redirect()->back()->with('success', "Rule #{$rule->id} band karke purane price wapas laga diye ({$count} price restore hue).");
-        }
-
-        $rule->update([
-            'state' => $rule->applied_at ? BulkPricingRule::STATE_COMPLETED : BulkPricingRule::STATE_REVERTED,
-            'status' => 0,
-            'reverted_at' => $rule->applied_at ? null : now(),
-        ]);
-
-        return redirect()->back()->with('success', "Rule #{$rule->id} band kar diya. Aage koi nayi registration par apply nahi hoga.");
     }
 
     public function getCitiesByTier(Request $request)

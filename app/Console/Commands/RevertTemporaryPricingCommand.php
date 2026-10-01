@@ -6,6 +6,7 @@ use App\Jobs\ApplyBulkPricingRuleJob;
 use App\Models\BulkPricingRule;
 use App\Services\BulkPricing\BulkPricingRuleApplier;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class RevertTemporaryPricingCommand extends Command
@@ -15,6 +16,21 @@ class RevertTemporaryPricingCommand extends Command
     protected $description = 'Starts scheduled bulk pricing rules, reverts expired temporary rules and closes finished "new registrations" rules';
 
     public function handle(): int
+    {
+        // Runs from both the scheduler and the page-load fallback in AppServiceProvider.
+        $lock = Cache::lock('bulk-pricing-revert-temporary', 300);
+        if (! $lock->get()) {
+            return self::SUCCESS;
+        }
+
+        try {
+            return $this->process();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function process(): int
     {
         $now = now();
 

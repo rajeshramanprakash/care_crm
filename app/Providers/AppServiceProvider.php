@@ -14,7 +14,11 @@ use App\Observers\OperationLeadObserver;
 use App\Services\B2BCorporateChatService;
 use App\Services\BulkPricing\BulkPricingRuleApplier;
 use App\Services\UserAssignmentService;
+use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -44,6 +48,21 @@ class AppServiceProvider extends ServiceProvider
         foreach ([Vendor::class, JobRequest::class, DoctorRequest::class] as $providerModel) {
             $providerModel::created(function ($model) {
                 $this->app->terminating(fn () => BulkPricingRuleApplier::applyToNewRegistration($model));
+            });
+        }
+
+        // Backup for servers where cron (schedule:run) is not running: start / revert due temporary rules
+        // before the page is built, at most once a minute.
+        if (! $this->app->runningInConsole()) {
+            Event::listen(RouteMatched::class, function () {
+                if (! Cache::add('bulk-pricing-tick', 1, 60)) {
+                    return;
+                }
+                try {
+                    Artisan::call('pricing:revert-temporary');
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             });
         }
 

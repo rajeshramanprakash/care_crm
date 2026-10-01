@@ -674,9 +674,10 @@
             form.find('.is-invalid').removeClass('is-invalid');
             Object.keys(errors).forEach(field => {
                 const input = form.find(`[name="${field}"]`);
-                if (input.length) {
+                const feedback = input.siblings('.invalid-feedback');
+                if (input.length && input.attr('type') !== 'hidden' && feedback.length) {
                     input.addClass('is-invalid');
-                    input.siblings('.invalid-feedback').text(errors[field][0]);
+                    feedback.text(errors[field][0]);
                 } else {
                     toastr.error(errors[field][0]);
                 }

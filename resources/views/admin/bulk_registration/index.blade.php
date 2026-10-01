@@ -231,7 +231,6 @@
                                 <th>Period</th>
                                 <th>Status</th>
                                 <th>Prices Changed</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -276,19 +275,10 @@
                                             <br><a href="#" class="small bulk-view-changes" data-url="{{ route($routePrefix.'.bulk_registration.changes', $rule) }}" data-rule="{{ $rule->id }}">View details</a>
                                         @endif
                                     </td>
-                                    <td>
-                                        @if(in_array($rule->state, ['scheduled', 'active'], true))
-                                            <form method="POST" action="{{ route($routePrefix.'.bulk_registration.stop', $rule) }}"
-                                                  onsubmit="return confirm('{{ $rule->isTemporary() && $rule->applied_at ? 'Rule band karke purane price wapas lagane hain?' : 'Rule band karna hai?' }}');">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ $rule->isTemporary() && $rule->applied_at ? 'Stop & Revert' : 'Stop' }}</button>
-                                            </form>
-                                        @endif
-                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="text-center">No bulk pricing rules found.</td>
+                                    <td colspan="11" class="text-center">No bulk pricing rules found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
