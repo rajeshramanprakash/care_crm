@@ -543,13 +543,6 @@ Route::post('whatsapp_msg_status', [Controllers\WhatsappMsgController::class, 'w
     Route::get('/doctor-consultation-services/create', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'create'])->name('subadmin.doctor_consultation_services.create');
     Route::post('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'store'])->name('subadmin.doctor_consultation_services.store');
 
-    // Bulk Registration
-    Route::post('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'store'])->name('subadmin.bulk_registration.store');
-
-    // Vendor / Job Requests (SubAdminJobProcController?)
-    Route::get('/jobproc/jobrequests', [Controllers\SubAdmin\SubAdminJobProcController::class, 'jobrequests'])->name('subadmin.jobproc.jobrequests');
-    Route::post('/jobproc', [Controllers\SubAdmin\SubAdminJobProcController::class, 'store'])->name('subadmin.jobproc.store');
-    
     // Modules with no SubAdmin Controllers (Fallback to Admin controllers to prevent RouteNotFoundException in sidebar)
     // Chat
     Route::get('/chat', [App\Http\Controllers\Admin\ChatController::class, 'index'])->name('subadmin.chat.index');
