@@ -64,7 +64,13 @@ return [
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         /** Use a current model id; fallbacks are tried automatically in App\Services\GeminiService */
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+        'lead_ai_language' => env('LEAD_AI_LANGUAGE', 'simple English'),
+        'lead_ai_auto' => (bool) env('LEAD_AI_AUTO', true),
+        'lead_ai_auto_gap' => (int) env('LEAD_AI_AUTO_GAP', 2),
+        /** Older leads (last N days, 0 = off) get a review in small batches every 10 minutes. */
+        'lead_ai_backfill_days' => (int) env('LEAD_AI_BACKFILL_DAYS', 90),
+        'lead_ai_backfill_batch' => (int) env('LEAD_AI_BACKFILL_BATCH', 4),
     ],
 
     'chat_ws' => [
@@ -156,6 +162,14 @@ return [
         'flow_otp_variable' => env('MSG91_FLOW_OTP_VARIABLE', 'otp'),
         'sender' => env('MSG91_SENDER', 'CRLXHC'),
         'otp_expiry_minutes' => (int) env('MSG91_OTP_EXPIRY_MINUTES', 10),
+    ],
+
+    /** Ashniva Desk — customer bug / technical tickets. Key = product credential "ask_<keyId>.<secret>" from Desk > Admin > Products. */
+    'desk' => [
+        'url' => rtrim((string) env('DESK_API_URL', 'https://api.desk.ashniva.com/api/v1'), '/'),
+        'key' => env('DESK_API_KEY'),
+        'module' => env('DESK_MODULE'),
+        'timeout' => (int) env('DESK_TIMEOUT', 10),
     ],
 
 ];

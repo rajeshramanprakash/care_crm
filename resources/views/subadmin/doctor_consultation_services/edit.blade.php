@@ -19,7 +19,7 @@
             <p>Update how this service appears on the website and in doctor registration.</p>
         </div>
 
-        @include('admin.doctor_consultation_services.partials.form', [
+        @include('subadmin.doctor_consultation_services.partials.form', [
             'formAction' => route('subadmin.doctor_consultation_services.update', $item),
             'formMethod' => 'PUT',
             'submitLabel' => 'Save changes',

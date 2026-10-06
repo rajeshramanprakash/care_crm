@@ -62,6 +62,7 @@
 
     <section class="content">
         <div class="container-fluid">
+            @include('lead_ai._panel', ['aiType' => 'sales', 'aiLeadId' => $lead->id])
             <div class="card lead-details-card">
         <div class="card-body">
                     <div class="row">

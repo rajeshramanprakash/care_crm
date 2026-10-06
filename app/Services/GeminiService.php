@@ -11,6 +11,12 @@ class GeminiService
 
     protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
+    /** Last API error message from generateContent() (shown to admins when AI fails). */
+    public ?string $lastError = null;
+
+    /** Model that answered the last successful generateContent() call. */
+    public ?string $lastModel = null;
+
     public function __construct()
     {
         $this->apiKey = (string) config('services.gemini.api_key', env('GEMINI_API_KEY', ''));
@@ -60,15 +66,14 @@ PROMPT;
      */
     protected function modelCandidates(): array
     {
-        $primary = trim((string) config('services.gemini.model', 'gemini-2.5-flash'));
+        $primary = trim((string) config('services.gemini.model', 'gemini-3.5-flash'));
         $pool = array_merge(
             [$primary],
             [
-                'gemini-2.5-flash',
-                'gemini-2.0-flash',
-                'gemini-2.0-flash-lite',
+                'gemini-3.5-flash',
                 'gemini-flash-latest',
-                'gemini-1.5-flash',
+                'gemini-3.5-flash-lite',
+                'gemini-2.5-flash',
             ]
         );
 
@@ -189,6 +194,67 @@ PROMPT;
             if ($out !== null && $out !== '') {
                 return $out;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Multi-part request (text + inline audio etc.). With $json the model is asked for a JSON-only answer.
+     *
+     * @param  list<array<string, mixed>>  $parts  e.g. [['text' => '...'], ['inline_data' => ['mime_type' => 'audio/mp3', 'data' => base64]]]
+     */
+    public function generateContent(array $parts, float $temperature = 0.3, int $maxOutputTokens = 8192, bool $json = false, int $timeout = 120): ?string
+    {
+        $this->lastError = null;
+        $this->lastModel = null;
+        if ($this->apiKey === '') {
+            $this->lastError = 'GEMINI_API_KEY is not configured.';
+
+            return null;
+        }
+
+        $generationConfig = ['temperature' => $temperature, 'maxOutputTokens' => $maxOutputTokens];
+        if ($json) {
+            $generationConfig['responseMimeType'] = 'application/json';
+        }
+
+        foreach ($this->modelCandidates() as $model) {
+            $model = ltrim(str_replace(['models/', 'models:', 'Models/'], '', $model), '/');
+            try {
+                $response = Http::timeout($timeout)
+                    ->acceptJson()
+                    ->asJson()
+                    ->post("{$this->baseUrl}/models/{$model}:generateContent?key=".$this->apiKey, [
+                        'contents' => [['role' => 'user', 'parts' => $parts]],
+                        'generationConfig' => $generationConfig,
+                    ]);
+            } catch (\Throwable $e) {
+                $this->lastError = $e->getMessage();
+                Log::error('Gemini generateContent exception', ['model' => $model, 'exception' => $e->getMessage()]);
+
+                continue;
+            }
+
+            $data = $response->json();
+            if (! $response->successful()) {
+                $this->lastError = is_array($data) ? ($data['error']['message'] ?? null) : null;
+                $this->lastError ??= 'HTTP '.$response->status();
+                Log::warning('Gemini API error', ['model' => $model, 'status' => $response->status(), 'message' => $this->lastError]);
+                if (in_array($response->status(), [400, 401, 403], true) && str_contains(strtolower($this->lastError), 'api key')) {
+                    return null;
+                }
+
+                continue;
+            }
+
+            $text = $this->extractTextFromResponse(is_array($data) ? $data : null);
+            if ($text !== null && $text !== '') {
+                $this->lastModel = $model;
+
+                return $text;
+            }
+            $this->lastError = 'The AI returned an empty answer.';
         }
 
         return null;

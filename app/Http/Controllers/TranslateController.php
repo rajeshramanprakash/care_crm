@@ -25,7 +25,8 @@ class TranslateController extends Controller
         $targetLang = $request->input('target_lang', 'en'); // Default English
 
         try {
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('services.gemini.api_key');
+            $model = config('services.gemini.model', 'gemini-3.5-flash');
             
             if (!$apiKey) {
                 return response()->json([
@@ -38,7 +39,7 @@ class TranslateController extends Controller
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}", [
                 'contents' => [
                     [
                         'parts' => [

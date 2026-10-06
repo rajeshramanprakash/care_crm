@@ -70,6 +70,8 @@ class PermissionSeeder extends Seeder
             'delete_services'
 ];
 
+        $permissions = array_unique(array_merge($permissions, \App\Support\SubAdminPermissions::allPermissionNames()));
+
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }

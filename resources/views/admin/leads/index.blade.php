@@ -461,6 +461,8 @@
                         style="background-color: #FD7E14; color:white; border:none;">&times;</button>
                 </div>
                 <div class="modal-body">
+                    @include('lead_ai._widget')
+                    <div id="viewLeadAiSlot" style="display:none;"></div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="mb-3 p-3 bg-light rounded">
@@ -954,6 +956,7 @@
             $('#viewLeadModal').on('hidden.bs.modal', function() {
                 console.log('Modal closed - stopping all audio');
                 stopAllAudio();
+                if (window.LeadAiPanel) window.LeadAiPanel.unmount(document.getElementById('viewLeadAiSlot'));
             });
             
             // Stop all audio when modal is hidden (alternative event)
@@ -1804,6 +1807,7 @@
                         // Show modal
                         // Extra safety: stop any leftover audio from a previous modal usage.
                         stopAllAudio();
+                        if (window.LeadAiPanel) window.LeadAiPanel.mount(document.getElementById('viewLeadAiSlot'), 'sales', response.id);
                         $('#viewLeadModal').modal('show');
                         
                         // Prepare recordings audio (metadata/listeners only).

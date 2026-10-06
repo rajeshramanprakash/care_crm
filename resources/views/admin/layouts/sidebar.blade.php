@@ -179,7 +179,7 @@ $route_name = Route::currentRouteName();
                             || strpos($route_name, 'corporate-accounts') !== false
                             || strpos($route_name, 'corporate-employees') !== false;
                     @endphp
-                    @canany(['view_insurers', 'view_brokers'])
+                    @canany(['view_insurers', 'view_brokers', 'view_corporate_accounts'])
                     <li class="nav-item has-treeview {{ $insurer_broker_sidebar_open ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ $insurer_broker_sidebar_open ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shield-alt"></i>
@@ -205,7 +205,7 @@ $route_name = Route::currentRouteName();
                                 </a>
                             </li>
                             @endcan
-                    @if(session('logged_role') == 1 || auth()->user()->can('view_b2b_corporate'))
+                            @can('view_corporate_accounts')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.corporate-accounts.index') }}" class="nav-link {{ strpos($route_name, 'corporate-accounts') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
@@ -218,7 +218,7 @@ $route_name = Route::currentRouteName();
                                     <p>Corporate Employees</p>
                                 </a>
                             </li>
-                            @endif
+                            @endcan
                         </ul>
                     </li>
                     @endcanany
@@ -275,8 +275,14 @@ $route_name = Route::currentRouteName();
                             <p>All Agreements &amp; Partners</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.subadmin_activity.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.subadmin_activity') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-history"></i>
+                            <p>Sub Admin Activity</p>
+                        </a>
+                    </li>
                     @endif
-                    @if(session('logged_role') == 1 || auth()->user()->can('view_doctor_requests') || auth()->user()->can('view_chats') || auth()->user()->can('view_whatsapp') || auth()->user()->can('view_vendors') || auth()->user()->can('view_bulk_registration') || auth()->user()->can('view_technical_support'))
+                    @canany(['view_doctor_otp_logs', 'view_doctor_requests', 'view_doctor_consultation_services'])
                     @php
                         $doctor_sidebar_open = strpos($route_name, 'doctor_requests') !== false
                             || strpos($route_name, 'doctor_consultation_services') !== false
@@ -292,24 +298,30 @@ $route_name = Route::currentRouteName();
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            @can('view_doctor_otp_logs')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.doctor_registration_otp_logs.index') }}" class="nav-link {{ strpos($route_name, 'doctor_registration_otp_logs') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Verify No.</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_doctor_requests')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.doctor_requests.index') }}" class="nav-link {{ strpos($route_name, 'doctor_requests') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Doctor requests</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_doctor_consultation_services')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.doctor_consultation_services.index') }}" class="nav-link {{ strpos($route_name, 'doctor_consultation_services') !== false ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Doctor consultation services</p>
                                 </a>
                             </li>
+                            @endcan
                             @if(session('logged_role') == 1)
                             <li class="nav-item">
                                 <a href="{{ route('admin.website_consultation_payments.index') }}" class="nav-link {{ strpos($route_name, 'website_consultation_payments') !== false ? 'active' : '' }}">
@@ -320,6 +332,8 @@ $route_name = Route::currentRouteName();
                             @endif
                         </ul>
                     </li>
+                    @endcanany
+                    @if(session('logged_role') == 1)
                     @php
                         $chats_sidebar_open = str_starts_with($route_name, 'admin.chat.')
                             || str_starts_with($route_name, 'admin.staff.chats')
@@ -359,12 +373,16 @@ $route_name = Route::currentRouteName();
                             @endif
                         </ul>
                     </li>
+                    @endif
+                    @can('view_whatsapp')
                     <li class="nav-item">
                          <a href="{{route($rolePrefix . '.all_whatsapp_chats.index')}}" class="nav-link {{ strpos($route_name, 'all_whatsapp_chats.index') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
                             <p>Whatsapp</p>
                         </a>
                     </li>
+                    @endcan
+                    @canany(['view_vendor_otp_logs', 'view_vendors', 'view_vendor_payments', 'view_freelancer_otp_logs', 'view_freelancer_payments', 'view_location_attendance', 'view_job_requests'])
                     @php
                         $freelancer_vendor_sidebar_open = str_starts_with($route_name, 'admin.vendors.')
                             || str_starts_with($route_name, 'admin.vendor_payments.')
@@ -383,60 +401,143 @@ $route_name = Route::currentRouteName();
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            @can('view_vendor_otp_logs')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.vendor_registration_otp_logs.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.vendor_registration_otp_logs') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Vendor Verify No.</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_vendors')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.vendors.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.vendors.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Vendor</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_vendor_payments')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.vendor_payments.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.vendor_payments.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Vendor Payments</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_freelancer_otp_logs')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.freelancer_registration_otp_logs.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.freelancer_registration_otp_logs') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Freelancer Verify No.</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_freelancer_payments')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.freelancer_payments.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.freelancer_payments.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Freelancer Payments</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_location_attendance')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.location_attendance.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.location_attendance.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Freelancer &amp; Vendor Attendance</p>
                                 </a>
                             </li>
+                            @endcan
+                            @can('view_job_requests')
                             <li class="nav-item">
                                 <a href="{{ route($rolePrefix . '.jobproc.index') }}" class="nav-link {{ str_starts_with($route_name, 'admin.jobproc.') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Job Request</p>
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcanany
+                    @can('view_bulk_registration')
                     <li class="nav-item">
                          <a href="{{route($rolePrefix . '.bulk_registration.index')}}" class="nav-link {{ strpos($route_name, 'bulk_registration') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-money-bill-wave"></i>
                             <p>Bulk Price / Reg</p>
                         </a>
                     </li>
+                    @endcan
+                    @can('view_technical_support')
                     <li class="nav-item">
                          <a href="{{route($rolePrefix . '.technical-support.index')}}" class="nav-link {{ strpos($route_name, 'technical-support') !== false ? 'active' : '' }}">
                             <i class="nav-icon fas fa-headset"></i>
                             <p>Technical Support</p>
+                        </a>
+                    </li>
+                    @endcan
+                    @php
+                        $fsc_speak_up_active = str_contains((string) $route_name, 'speak_up_settings') || str_starts_with((string) $route_name, 'speak_up.review.');
+                        $fsc_open = str_contains((string) $route_name, 'customer_feedback') || str_contains((string) $route_name, 'support_tickets') || $fsc_speak_up_active;
+                        $fsc_feedback_new = $fsc_tickets_unread = $fsc_speak_up_new = 0;
+                        try {
+                            if (auth()->user()?->can('view_customer_feedback')) { $fsc_feedback_new = \App\Models\CustomerFeedback::where('status', 'new')->count(); }
+                            if (auth()->user()?->can('view_support_tickets')) { $fsc_tickets_unread = \App\Models\SupportTicket::where('unread_for_staff', true)->count(); }
+                            if ($rolePrefix === 'admin') { $fsc_speak_up_new = \App\Models\SpeakUpSubmission::where('status', 'new')->count(); }
+                        } catch (\Throwable $e) {
+                        }
+                    @endphp
+                    @if ($rolePrefix === 'admin' || auth()->user()?->can('view_customer_feedback') || auth()->user()?->can('view_support_tickets'))
+                    <li class="nav-item has-treeview {{ $fsc_open ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ $fsc_open ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-comments"></i>
+                            <p>
+                                Feedback &amp; Support
+                                @if ($fsc_feedback_new + $fsc_tickets_unread + $fsc_speak_up_new > 0)<span class="badge bg-danger right me-3">{{ $fsc_feedback_new + $fsc_tickets_unread + $fsc_speak_up_new }}</span>@endif
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            @can('view_customer_feedback')
+                            <li class="nav-item">
+                                <a href="{{ route($rolePrefix . '.customer_feedback.index') }}" class="nav-link {{ str_contains((string) $route_name, 'customer_feedback') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Customer Feedback @if($fsc_feedback_new)<span class="badge bg-danger right">{{ $fsc_feedback_new }}</span>@endif</p>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('view_support_tickets')
+                            <li class="nav-item">
+                                <a href="{{ route($rolePrefix . '.support_tickets.index') }}" class="nav-link {{ str_contains((string) $route_name, 'support_tickets') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Support Tickets @if($fsc_tickets_unread)<span class="badge bg-danger right">{{ $fsc_tickets_unread }}</span>@endif</p>
+                                </a>
+                            </li>
+                            @endcan
+                            @if ($rolePrefix === 'admin')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.speak_up_settings.index') }}" class="nav-link {{ $fsc_speak_up_active ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Speak Up @if($fsc_speak_up_new)<span class="badge bg-danger right">{{ $fsc_speak_up_new }}</span>@endif</p>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </li>
+                    @endif
+                    @if ($rolePrefix === 'admin')
+                    <li class="nav-item">
+                        <a href="{{ route('admin.ai_insights.index') }}" class="nav-link {{ str_starts_with((string) $route_name, 'admin.ai_insights.') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-robot"></i>
+                            <p>AI Lead Insights</p>
+                        </a>
+                    </li>
+                    @endif
+                    @if ($rolePrefix === 'subadmin')
+                    <li class="nav-item">
+                        <a href="{{ route('speak_up.create', ['as' => 'staff']) }}" class="nav-link {{ str_starts_with((string) $route_name, 'speak_up.') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-bullhorn"></i>
+                            <p>Speak Up</p>
                         </a>
                     </li>
                     @endif

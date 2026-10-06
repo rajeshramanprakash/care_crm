@@ -73,6 +73,12 @@ $route_name = Route::currentRouteName();
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('manager.ai_insights.index') }}" class="nav-link {{ str_starts_with($route_name, 'manager.ai_insights.') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-robot"></i>
+                        <p>AI Lead Insights</p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{{route('manager.referral_leads.index')}}" class="nav-link {{ strpos($route_name, 'referral_leads') !== false ? 'active' : '' }}">
                         <i class="nav-icon fas fa-share-square"></i>
                         <p>Referral Leads</p>
@@ -133,6 +139,12 @@ $route_name = Route::currentRouteName();
                        <p>Technical Support</p>
                    </a>
                </li>
+                <li class="nav-item">
+                    <a href="{{ route('speak_up.create', ['as' => 'staff']) }}" class="nav-link {{ str_starts_with((string) Route::currentRouteName(), 'speak_up.') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-bullhorn"></i>
+                        <p>Speak Up</p>
+                    </a>
+                </li>
             </ul>
         </nav>
         <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">

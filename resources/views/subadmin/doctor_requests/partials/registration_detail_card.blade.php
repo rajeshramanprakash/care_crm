@@ -816,7 +816,7 @@
 
                         @unless($doctorPortalReadOnly ?? false)
                             <div class="mt-3" id="drLeegalityPanelWrap">
-                                @include('admin.doctor_requests.partials.leegality_agreement_panel', [
+                                @include('subadmin.doctor_requests.partials.leegality_agreement_panel', [
                                     'doctor' => $doctor,
                                     'leegalitySignature' => $doctor->latestLeegalitySignature,
                                 ])

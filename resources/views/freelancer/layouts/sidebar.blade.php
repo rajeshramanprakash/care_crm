@@ -104,6 +104,12 @@ $route_name = Route::currentRouteName();
                         <p>Customer Chats</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('speak_up.create', ['as' => 'freelancer']) }}" class="nav-link {{ str_starts_with((string) Route::currentRouteName(), 'speak_up.') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-bullhorn"></i>
+                        <p>Speak Up</p>
+                    </a>
+                </li>
             </ul>
         </nav>
         <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">

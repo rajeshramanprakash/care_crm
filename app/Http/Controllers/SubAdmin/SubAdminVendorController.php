@@ -65,7 +65,7 @@ class SubAdminVendorController extends Controller
             ->groupBy('vendor_id')
             ->pluck('cnt', 'vendor_id');
 
-        return view('subadmin.vendor.index', compact('vendors', 'services', 'locations', 'pendingPriceChangeCount', 'pendingByVendor'));
+        return view('subadmin.vendors.index', compact('vendors', 'services', 'locations', 'pendingPriceChangeCount', 'pendingByVendor'));
     }
 
     public function store(Request $request)

@@ -1694,7 +1694,7 @@ $(function() {
         $('#importJobRequestBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Importing...');
         
         $.ajax({
-            url: '{{ route('subadmin.jobproc.import") }}',
+            url: '{{ route('subadmin.jobproc.import') }}',
             type: 'POST',
             data: formData,
             processData: false,

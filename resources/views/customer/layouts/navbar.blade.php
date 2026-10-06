@@ -8,6 +8,11 @@
 
     <ul class="navbar-nav ml-auto">
         <li class="nav-item">
+            <a class="nav-link" href="{{ route('customer.support.create') }}" title="Help &amp; Support">
+                <i class="fas fa-question-circle"></i> <span class="d-none d-sm-inline">Help</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" data-widget="fullscreen" href="#" role="button">
                 <i class="fas fa-expand-arrows-alt"></i>
             </a>

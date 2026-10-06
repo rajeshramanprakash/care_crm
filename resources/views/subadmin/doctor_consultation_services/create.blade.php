@@ -19,7 +19,7 @@
             <p>Service name, duration aur display order set karein — yeh website booking aur doctor registration me use hoga.</p>
         </div>
 
-        @include('admin.doctor_consultation_services.partials.form', [
+        @include('subadmin.doctor_consultation_services.partials.form', [
             'formAction' => route('subadmin.doctor_consultation_services.store'),
             'submitLabel' => 'Create service',
         ])

@@ -73,18 +73,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="location_id">Location</label>
-                                    <select class="form-control location-select @error('location_id') is-invalid @enderror" id="location_id" name="location_id[]" multiple required data-placeholder="Select locations">
-                                        <option value="all" id="select-all-location">Select All</option>
-                                        @foreach($locations as $location)
-                                            <option value="{{ $location->id }}" data-state="{{ $location->state ?? '' }}" data-city-name="{{ $location->name }}" {{ in_array($location->id, old('location_id', isset($user) ? ($user->location_id ?? []) : [])) ? 'selected' : '' }}>
-                                                {{ $location->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('location_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <label>Location</label>
+                                    @include('includes.user-location-picker')
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -165,78 +155,16 @@
                                     </thead>
                                     <tbody>
                                         @php
-                                            $modules = [
-                                                'Dashboard' => ['access' => 'view_dashboard'],
-                                                'Payments' => [
-                                                    'access' => 'view_payments',
-                                                    'create' => 'create_payment'
-                                                ],
-                                                'Leads' => [
-                                                    'access' => 'view_leads',
-                                                    'view_details' => 'view_lead_details',
-                                                    'create' => 'create_lead',
-                                                    'edit' => 'edit_lead',
-                                                    'delete' => 'delete_lead'
-                                                ],
-                                                'Sales & Operation Referral Leads' => ['access' => 'view_referral_leads'],
-                                                'Users' => [
-                                                    'access' => 'view_user',
-                                                    'create' => 'create_user',
-                                                    'edit' => 'edit_user',
-                                                    'delete' => 'delete_user'
-                                                ],
-                                                'B2B Users' => [
-                                                    'access' => 'view_b2b_users',
-                                                    'create' => 'create_b2b_users',
-                                                    'edit' => 'edit_b2b_users',
-                                                    'delete' => 'delete_b2b_users'
-                                                ],
-                                                'B2B Corporate' => [
-                                                    'access' => 'view_b2b_corporate',
-                                                    'create' => 'create_b2b_corporate',
-                                                    'edit' => 'edit_b2b_corporate',
-                                                    'delete' => 'delete_b2b_corporate'
-                                                ],
-                                                'Individual' => [
-                                                    'access' => 'view_b2b_individual',
-                                                    'create' => 'create_b2b_individual',
-                                                    'edit' => 'edit_b2b_individual',
-                                                    'delete' => 'delete_b2b_individual'
-                                                ],
-                                                'Insurers' => [
-                                                    'access' => 'view_insurers',
-                                                    'create' => 'create_insurer',
-                                                    'edit' => 'edit_insurer',
-                                                    'delete' => 'delete_insurer'
-                                                ],
-                                                'Brokers' => [
-                                                    'access' => 'view_brokers',
-                                                    'create' => 'create_broker',
-                                                    'edit' => 'edit_broker',
-                                                    'delete' => 'delete_broker'
-                                                ],
-                                                'Break Logs' => ['access' => 'view_break_logs'],
-                                                'Duty Logs' => ['access' => 'view_duty_logs'],
-                                                'Operation Leads' => ['access' => 'view_operation_leads'],
-                                                'Locations' => ['access' => 'view_locations'],
-                                                'Services' => ['access' => 'view_services'],
-                                                'Registration Languages' => ['access' => 'view_languages'],
-                                                'Agreements' => ['access' => 'view_agreements'],
-                                                'Doctor Requests' => ['access' => 'view_doctor_requests'],
-                                                'Chats' => ['access' => 'view_chats'],
-                                                'Whatsapp' => ['access' => 'view_whatsapp'],
-                                                'Job Request' => ['access' => 'view_vendors'],
-                                                'Bulk Registration' => ['access' => 'view_bulk_registration'],
-                                                'Technical Support' => ['access' => 'view_technical_support'],
-                                            ];
+                                            $modules = \App\Support\SubAdminPermissions::modules();
 
-                                            $hasPerm = function($permName) use ($user) {
-                                                return isset($user) && $user->hasDirectPermission($permName) ? 'checked' : '';
+                                            $grantedPermissions = old('permissions', isset($user) && $user->exists ? $user->getDirectPermissions()->pluck('name')->all() : []);
+                                            $hasPerm = function($permName) use ($grantedPermissions) {
+                                                return in_array($permName, $grantedPermissions, true) ? 'checked' : '';
                                             };
                                         @endphp
                                         
                                         @foreach($modules as $moduleName => $perms)
-                                            <tr>
+                                            <tr class="perm-row" data-access="{{ $perms['access'] ?? '' }}">
                                                 <td class="text-start fw-bold" style="color: #333;">{{ $moduleName }}</td>
                                                 
                                                 <!-- Access (Menu) -->
@@ -425,6 +353,23 @@
             allCheckboxes.prop('checked', anyUnchecked);
         });
 
+        // Create / edit / delete / view details need the module's Access (menu) permission.
+        $('#subAdminPermissionsContainer').on('change', '.perm-checkbox', function() {
+            const $row = $(this).closest('.perm-row');
+            const access = String($row.data('access') || '');
+            if (!access) {
+                return;
+            }
+            const $access = $row.find('.perm-checkbox[value="' + access + '"]');
+            if (this.value === access) {
+                if (!this.checked) {
+                    $row.find('.perm-checkbox').prop('checked', false);
+                }
+            } else if (this.checked) {
+                $access.prop('checked', true);
+            }
+        });
+
         // Get initial selected roles
         const initialRoleIds = $('#role_id').val();
         toggleCommissionFields(initialRoleIds);
@@ -439,24 +384,6 @@
             toggleSubAdminPermissions();
         });
 
-        // Handle Select All for locations
-        $('#location_id').on('change', function() {
-            const selectedValues = $(this).val();
-
-            if (selectedValues && selectedValues.includes('all')) {
-                // If "Select All" is selected, select all location options except "Select All"
-                const allLocationIds = [];
-                $(this).find('option').each(function() {
-                    if ($(this).val() !== 'all' && $(this).val() !== '') {
-                        allLocationIds.push($(this).val());
-                    }
-                });
-
-                // Set all location IDs (excluding 'all') and update Select2
-                $(this).val(allLocationIds);
-                $(this).trigger('change');
-            }
-        });
 
         // Handle Select All for services
         $('#services').on('change', function() {

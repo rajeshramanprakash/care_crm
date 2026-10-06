@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\CspMiddleware::class,
+            \App\Http\Middleware\LogSubAdminActivity::class,
         ],
 
         'api' => [
@@ -67,10 +68,13 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'subadmin.permission' => \App\Http\Middleware\SubAdminPermissionMiddleware::class,
         'b2b.auth' => \App\Http\Middleware\B2BAuthMiddleware::class,
         'b2b.corporate.auth' => \App\Http\Middleware\B2BCorporateAuthMiddleware::class,
         'b2b.individual.auth' => \App\Http\Middleware\B2BIndividualAuthMiddleware::class,
         'vendor.auth' => \App\Http\Middleware\VendorAuthMiddleware::class,
+        'customer.session' => \App\Http\Middleware\EnsureCustomerSession::class,
+        'speak_up.submitter' => \App\Http\Middleware\ResolveSpeakUpSubmitter::class,
         'b2b.reference.auth' => \App\Http\Middleware\B2BReferenceAuthMiddleware::class,
         'doctor.referral.auth' => \App\Http\Middleware\DoctorReferralAuthMiddleware::class,
         'insurer.auth' => \App\Http\Middleware\InsurerAuthMiddleware::class,

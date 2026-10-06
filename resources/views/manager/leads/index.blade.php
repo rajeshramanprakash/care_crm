@@ -486,6 +486,8 @@ table thead, table tfoot, table tbody tr {
                         style="background-color: #FD7E14; color:white; border:none;">&times;</button>
                 </div>
                 <div class="modal-body">
+                    @include('lead_ai._widget')
+                    <div id="viewLeadAiSlot" style="display:none;"></div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="mb-3 p-3 bg-light rounded">
@@ -1679,6 +1681,7 @@ table thead, table tfoot, table tbody tr {
                         }
 
                         // Show modal
+                        if (window.LeadAiPanel) window.LeadAiPanel.mount(document.getElementById('viewLeadAiSlot'), 'sales', response.id);
                         $('#viewLeadModal').modal('show');
                     },
                     error: function(xhr) {

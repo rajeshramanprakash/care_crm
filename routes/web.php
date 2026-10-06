@@ -520,57 +520,6 @@ Route::post('whatsapp_msg_status', [Controllers\WhatsappMsgController::class, 'w
     Route::get('admin/all-whatsapp-chats/messages/{number}', [WhatsappMsgController::class, 'get_messages_for_number'])->name('admin.all_whatsapp_chats.messages');
     Route::get('admin/all-whatsapp-chats/executives/{number}', [App\Http\Controllers\WhatsappMsgController::class, 'get_executives_for_number'])->name('admin.all_whatsapp_chats.executives');
 
-    // --- Missing SubAdmin Routes ---
-    Route::post('doctor-referral-users', [Controllers\SubAdmin\SubAdminDoctorReferralUserController::class, 'store'])->name('subadmin.doctor_referral_users.store');
-    
-    // Doctor Requests (remaining)
-    Route::post('/doctor-requests/{doctor_request}/profile-image/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approveProfileImage'])->name('subadmin.doctor_requests.profile_image_approve');
-    Route::get('/doctor-requests/{doctor_request}/website-reviews/panel', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsPanel'])->name('subadmin.doctor_requests.website_reviews_panel');
-    Route::post('/doctor-requests/{doctor_request}/website-reviews', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsStore'])->name('subadmin.doctor_requests.website_reviews_store');
-    Route::delete('/doctor-requests/{doctor_request}/website-reviews/{review}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsDestroy'])->name('subadmin.doctor_requests.website_reviews_destroy');
-    Route::get('/doctor-requests/{doctor_request}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'show'])->name('subadmin.doctor_requests.show');
-    Route::get('/doctor-requests/{doctor_request}/pricing-edit', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingEdit'])->name('subadmin.doctor_requests.pricing_edit');
-    Route::put('/doctor-requests/{doctor_request}/pricing', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePricing'])->name('subadmin.doctor_requests.pricing_update');
-    Route::get('/doctor-requests/{doctor_request}/price-change-requests', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'priceChangeRequests'])->name('subadmin.doctor_requests.price_change_requests');
-    Route::post('/doctor-requests/price-change-requests/{price_change_request}/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approvePriceChangeRequest'])->name('subadmin.doctor_requests.price_change_approve');
-    Route::post('/doctor-requests/price-change-requests/{price_change_request}/reject', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'rejectPriceChangeRequest'])->name('subadmin.doctor_requests.price_change_reject');
-    Route::get('/doctor-requests/{doctor_request}/pricing-logs', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingLogs'])->name('subadmin.doctor_requests.pricing_logs');
-    Route::post('/doctor-requests/{doctor_request}/status', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updateStatus'])->name('subadmin.doctor_requests.update_status');
-    Route::post('/doctor-requests/regenerate-online-meetings', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'regenerateOnlineMeetingLinks'])->name('subadmin.doctor_requests.regenerate_online_meetings');
-    Route::post('/doctor-requests/portal-lead-commission', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePortalLeadCommission'])->name('subadmin.doctor_requests.portal_lead_commission');
-
-    // Doctor Consultation Services (remaining)
-    Route::get('/doctor-consultation-services/create', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'create'])->name('subadmin.doctor_consultation_services.create');
-    Route::post('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'store'])->name('subadmin.doctor_consultation_services.store');
-
-    // Modules with no SubAdmin Controllers (Fallback to Admin controllers to prevent RouteNotFoundException in sidebar)
-    // Chat
-    Route::get('/chat', [App\Http\Controllers\Admin\ChatController::class, 'index'])->name('subadmin.chat.index');
-    Route::get('/chat/messages/{userId}', [App\Http\Controllers\Admin\ChatController::class, 'getMessages'])->name('subadmin.chat.messages');
-    Route::post('/chat/send', [App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('subadmin.chat.send');
-    Route::get('/chat/unread-counts', [App\Http\Controllers\Admin\ChatController::class, 'getUnreadCounts'])->name('subadmin.chat.unread-counts');
-    Route::post('chat/send-attachment', [App\Http\Controllers\Admin\ChatController::class, 'sendAttachment'])->name('subadmin.chat.send.attachment');
-
-    // Cases
-    Route::get('/case', [App\Http\Controllers\Admin\CaseController::class, 'index'])->name('subadmin.case.index');
-    Route::post('/cases/save-claimno', [App\Http\Controllers\Admin\CaseController::class, 'saveClaimNo'])->name('subadmin.cases.save-claimno');
-    Route::post('/cases/save-tpa', [App\Http\Controllers\Admin\CaseController::class, 'saveTpa'])->name('subadmin.cases.save-tpa');
-    
-    // Courier
-    Route::get('/courier', [App\Http\Controllers\Admin\CourierController::class, 'index'])->name('subadmin.courier.index');
-    Route::post('/courier/case/update', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdate'])->name('subadmin.courier.case.update');
-    Route::post('/courier/case/update/post-one', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdatePostOne'])->name('subadmin.courier.case.update.post_one');
-    Route::post('/courier/case/update/post-two', [App\Http\Controllers\Admin\CourierController::class, 'caseUpdatePostTwo'])->name('subadmin.courier.case.update.post_two');
-    Route::post('/post/update', [App\Http\Controllers\Admin\CourierController::class, 'postUpdate'])->name('subadmin.post.update');
-    Route::post('/post/two/update', [App\Http\Controllers\Admin\CourierController::class, 'postTwoUpdate'])->name('subadmin.post.two.update');
-
-    // Query
-    Route::get('/query', [App\Http\Controllers\Admin\QueryController::class, 'index'])->name('subadmin.query.index');
-
-    // Tickets
-    Route::get('/tickets', [App\Http\Controllers\Admin\TicketController::class, 'index'])->name('subadmin.tickets.index');
-    Route::get('/tickets/statistics', [App\Http\Controllers\Admin\TicketController::class, 'statistics'])->name('subadmin.tickets.statistics');
-
     Route::post('whatsapp-group/add-executive', [App\Http\Controllers\WhatsappMsgController::class, 'addExecutiveToWhatsappGroup'])->name('whatsapp_group.add_executive');
     Route::post('whatsapp-group/remove-executive', [App\Http\Controllers\WhatsappMsgController::class, 'removeExecutiveFromWhatsappGroup'])->name('whatsapp_group.remove_executive');
     Route::post('admin/all-whatsapp-chats/mark-read/{number}', [App\Http\Controllers\WhatsappMsgController::class, 'markMessagesAsRead'])->name('admin.all_whatsapp_chats.mark_read');
@@ -737,6 +686,46 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::post('/attendance/location-attendance-enabled', [App\Http\Controllers\Customer\CustomerController::class, 'setLocationAttendanceEnabled'])->name('attendance.location-attendance-enabled');
     Route::get('/payment-details', [App\Http\Controllers\Customer\CustomerController::class, 'paymentDetails'])->name('payment-details');
     Route::get('/payment-details/invoice/{id}', [App\Http\Controllers\Customer\CustomerController::class, 'showPaymentInvoice'])->name('payment_invoice.show');
+
+    Route::middleware('customer.session')->group(function () {
+        Route::get('/feedback', [App\Http\Controllers\Customer\CustomerFeedbackController::class, 'index'])->name('feedback.index');
+        Route::post('/feedback', [App\Http\Controllers\Customer\CustomerFeedbackController::class, 'store'])->name('feedback.store');
+        Route::post('/feedback/dismiss-prompt', [App\Http\Controllers\Customer\CustomerFeedbackController::class, 'dismissPrompt'])->name('feedback.dismiss-prompt');
+
+        Route::get('/support', [App\Http\Controllers\Customer\CustomerSupportController::class, 'index'])->name('support.index');
+        Route::get('/support/create', [App\Http\Controllers\Customer\CustomerSupportController::class, 'create'])->name('support.create');
+        Route::post('/support', [App\Http\Controllers\Customer\CustomerSupportController::class, 'store'])->name('support.store');
+        Route::get('/support/{id}', [App\Http\Controllers\Customer\CustomerSupportController::class, 'show'])->whereNumber('id')->name('support.show');
+        Route::post('/support/{id}/reply', [App\Http\Controllers\Customer\CustomerSupportController::class, 'reply'])->whereNumber('id')->name('support.reply');
+        Route::post('/support/{id}/close', [App\Http\Controllers\Customer\CustomerSupportController::class, 'close'])->whereNumber('id')->name('support.close');
+        Route::get('/support/attachment/{messageId}', [App\Http\Controllers\Customer\CustomerSupportController::class, 'attachment'])->whereNumber('messageId')->name('support.attachment');
+    });
+});
+
+// Speak Up (staff, Sub Admin, freelancer, vendor) — reviewed only on the Admin secret URL
+Route::prefix('speak-up')->name('speak_up.')->middleware('speak_up.submitter')->group(function () {
+    Route::get('/', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'store'])->middleware('throttle:10,1')->name('store');
+    Route::get('/submitted', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'submitted'])->name('submitted');
+    Route::get('/mine', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'mine'])->name('mine');
+    Route::get('/mine/{id}', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'showMine'])->whereNumber('id')->name('mine.show');
+    Route::get('/status', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'statusForm'])->name('status');
+    Route::post('/status', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'statusCheck'])->middleware('throttle:10,1')->name('status.check');
+    Route::post('/saved', [App\Http\Controllers\SpeakUp\SpeakUpSubmitController::class, 'savedStatuses'])->middleware('throttle:20,1')->name('saved');
+});
+
+// Speak Up review: secret URL. Not inside the admin group on purpose — the controller logs every visit
+// (wrong slug, guests, other roles) and then returns 404 to anyone who is not a logged-in Admin.
+Route::prefix('admin/speak-up-review/{slug}')->name('speak_up.review.')->middleware('throttle:60,1')->group(function () {
+    Route::get('/', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'gate'])->name('gate');
+    Route::post('/device', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'deviceInfo'])->name('device');
+    Route::post('/unlock', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'unlock'])->name('unlock');
+    Route::get('/cases', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'cases'])->name('cases');
+    Route::get('/cases/{id}', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'show'])->whereNumber('id')->name('show');
+    Route::post('/cases/{id}/status', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'updateStatus'])->whereNumber('id')->name('status');
+    Route::post('/cases/{id}/reply', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'reply'])->whereNumber('id')->name('reply');
+    Route::get('/access-log', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'accessLog'])->name('access_log');
+    Route::post('/lock', [App\Http\Controllers\SpeakUp\SpeakUpReviewController::class, 'lock'])->name('lock');
 });
 
 // Legacy B2B portal (admin → B2B Users — separate from corporate/individual partners)
@@ -901,6 +890,24 @@ Route::prefix('/admin')->middleware(['auth', 'role:Admin'])->group(function () {
         return response()->json(['today_revenue' => $revenue]);
     });
     // User Management
+    Route::get('subadmin-activity', [Controllers\Admin\SubAdminActivityLogController::class, 'index'])->name('admin.subadmin_activity.index');
+    Route::get('subadmin-activity/{log}', [Controllers\Admin\SubAdminActivityLogController::class, 'show'])->name('admin.subadmin_activity.show');
+    Route::get('speak-up-settings', [Controllers\Admin\SpeakUpSettingsController::class, 'index'])->name('admin.speak_up_settings.index');
+    Route::post('speak-up-settings/password', [Controllers\Admin\SpeakUpSettingsController::class, 'updatePassword'])->name('admin.speak_up_settings.password');
+    Route::post('speak-up-settings/regenerate-url', [Controllers\Admin\SpeakUpSettingsController::class, 'regenerateUrl'])->name('admin.speak_up_settings.regenerate');
+    Route::get('customer-feedback', [Controllers\Admin\CustomerFeedbackAdminController::class, 'index'])->name('admin.customer_feedback.index');
+    Route::get('customer-feedback/{id}', [Controllers\Admin\CustomerFeedbackAdminController::class, 'show'])->whereNumber('id')->name('admin.customer_feedback.show');
+    Route::post('customer-feedback/{id}', [Controllers\Admin\CustomerFeedbackAdminController::class, 'update'])->whereNumber('id')->name('admin.customer_feedback.update');
+    Route::get('ai-insights', [Controllers\LeadAiInsightController::class, 'index'])->name('admin.ai_insights.index');
+    Route::get('ai-insights/{type}/{id}', [Controllers\LeadAiInsightController::class, 'show'])->whereIn('type', ['sales', 'operation'])->whereNumber('id')->name('admin.ai_insights.show');
+    Route::get('ai-insights/{type}/{id}/status', [Controllers\LeadAiInsightController::class, 'status'])->whereIn('type', ['sales', 'operation'])->whereNumber('id')->name('admin.ai_insights.status');
+    Route::post('ai-insights/{type}/{id}/analyze', [Controllers\LeadAiInsightController::class, 'analyze'])->whereIn('type', ['sales', 'operation'])->whereNumber('id')->middleware('throttle:20,1')->name('admin.ai_insights.analyze');
+    Route::get('support-tickets', [Controllers\Admin\SupportTicketAdminController::class, 'index'])->name('admin.support_tickets.index');
+    Route::get('support-tickets/{id}', [Controllers\Admin\SupportTicketAdminController::class, 'show'])->whereNumber('id')->name('admin.support_tickets.show');
+    Route::post('support-tickets/{id}/reply', [Controllers\Admin\SupportTicketAdminController::class, 'reply'])->whereNumber('id')->name('admin.support_tickets.reply');
+    Route::post('support-tickets/{id}', [Controllers\Admin\SupportTicketAdminController::class, 'update'])->whereNumber('id')->name('admin.support_tickets.update');
+    Route::get('support-tickets/attachment/{messageId}', [Controllers\Admin\SupportTicketAdminController::class, 'attachment'])->whereNumber('messageId')->name('admin.support_tickets.attachment');
+    Route::post('support-tickets/{id}/desk-sync', [Controllers\Admin\SupportTicketAdminController::class, 'deskSync'])->whereNumber('id')->name('admin.support_tickets.desk_sync');
     Route::get('users', [Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
 
     // Location Management
@@ -1286,6 +1293,10 @@ Route::prefix('/manager')->middleware(['auth', 'role:Sales Manager'])->group(fun
     Route::get('/leads/{id}/edit', [App\Http\Controllers\Manager\LeadController::class, 'edit'])->name('manager.leads.edit');
     Route::put('/leads/{id}', [App\Http\Controllers\Manager\LeadController::class, 'update'])->name('manager.leads.update');
     Route::post('/leads/{id}/status-remark/generate-ai', [App\Http\Controllers\LeadStatusRemarkAiController::class, 'generateForManager'])->name('manager.leads.status-remark.generate-ai');
+    Route::get('/ai-insights', [App\Http\Controllers\LeadAiInsightController::class, 'index'])->name('manager.ai_insights.index');
+    Route::get('/ai-insights/{type}/{id}', [App\Http\Controllers\LeadAiInsightController::class, 'show'])->whereIn('type', ['sales'])->whereNumber('id')->name('manager.ai_insights.show');
+    Route::get('/ai-insights/{type}/{id}/status', [App\Http\Controllers\LeadAiInsightController::class, 'status'])->whereIn('type', ['sales'])->whereNumber('id')->name('manager.ai_insights.status');
+    Route::post('/ai-insights/{type}/{id}/analyze', [App\Http\Controllers\LeadAiInsightController::class, 'analyze'])->whereIn('type', ['sales'])->whereNumber('id')->middleware('throttle:20,1')->name('manager.ai_insights.analyze');
     Route::get('/leads/executives', [App\Http\Controllers\Manager\LeadController::class, 'getExecutives'])->name('manager.leads.getExecutives');
 
     Route::get('/referral-leads', [App\Http\Controllers\Manager\ReferralLeadController::class, 'index'])->name('manager.referral_leads.index');
@@ -1457,6 +1468,9 @@ Route::prefix('/operation')->middleware(['auth', 'role:Operation'])->group(funct
         return view('operation.technical_support.index');
     })->name('operation.technical-support.index');
 
+    Route::get('/customer-feedback', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'index'])->name('operation.customer_feedback.index');
+    Route::get('/customer-feedback/{id}', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'show'])->whereNumber('id')->name('operation.customer_feedback.show');
+
 });
 
 // Operation Manager Routes
@@ -1591,6 +1605,13 @@ Route::middleware(['auth', 'role:Operation Manager'])->prefix('operation-manager
         return view('operation_manager.technical_support.index');
     })->name('technical-support.index');
 
+    Route::get('/customer-feedback', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'index'])->name('customer_feedback.index');
+    Route::get('/customer-feedback/{id}', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'show'])->whereNumber('id')->name('customer_feedback.show');
+    Route::get('/ai-insights', [App\Http\Controllers\LeadAiInsightController::class, 'index'])->name('ai_insights.index');
+    Route::get('/ai-insights/{type}/{id}', [App\Http\Controllers\LeadAiInsightController::class, 'show'])->whereIn('type', ['operation'])->whereNumber('id')->name('ai_insights.show');
+    Route::get('/ai-insights/{type}/{id}/status', [App\Http\Controllers\LeadAiInsightController::class, 'status'])->whereIn('type', ['operation'])->whereNumber('id')->name('ai_insights.status');
+    Route::post('/ai-insights/{type}/{id}/analyze', [App\Http\Controllers\LeadAiInsightController::class, 'analyze'])->whereIn('type', ['operation'])->whereNumber('id')->middleware('throttle:20,1')->name('ai_insights.analyze');
+
 });
 
 Route::get('/api/all-users', function () {
@@ -1642,7 +1663,7 @@ Route::middleware(['auth'])->group(function() {
 
 
 // Routes for Sub Admin Role
-Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(function () {
+Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin', 'subadmin.permission'])->group(function () {
     Route::get('/dashboard', [Controllers\SubAdmin\SubAdminController::class, 'dashboard'])->name('subadmin.dashboard');
     Route::get('/dashboard/sales-leads-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getSalesLeadsStats'])->name('subadmin.dashboard.sales-leads-stats');
     Route::get('/dashboard/operation-leads-stats', [App\Http\Controllers\SubAdmin\SubAdminController::class, 'getOperationLeadsStats'])->name('subadmin.dashboard.operation-leads-stats');
@@ -1785,6 +1806,17 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
         return view('subadmin.technical_support.index');
     })->name('subadmin.technical-support.index')->middleware('can:view_technical_support');
 
+    // Feedback & Support Center
+    Route::get('customer-feedback', [Controllers\Admin\CustomerFeedbackAdminController::class, 'index'])->name('subadmin.customer_feedback.index');
+    Route::get('customer-feedback/{id}', [Controllers\Admin\CustomerFeedbackAdminController::class, 'show'])->whereNumber('id')->name('subadmin.customer_feedback.show');
+    Route::post('customer-feedback/{id}', [Controllers\Admin\CustomerFeedbackAdminController::class, 'update'])->whereNumber('id')->name('subadmin.customer_feedback.update');
+    Route::get('support-tickets', [Controllers\Admin\SupportTicketAdminController::class, 'index'])->name('subadmin.support_tickets.index');
+    Route::get('support-tickets/{id}', [Controllers\Admin\SupportTicketAdminController::class, 'show'])->whereNumber('id')->name('subadmin.support_tickets.show');
+    Route::post('support-tickets/{id}/reply', [Controllers\Admin\SupportTicketAdminController::class, 'reply'])->whereNumber('id')->name('subadmin.support_tickets.reply');
+    Route::post('support-tickets/{id}', [Controllers\Admin\SupportTicketAdminController::class, 'update'])->whereNumber('id')->name('subadmin.support_tickets.update');
+    Route::get('support-tickets/attachment/{messageId}', [Controllers\Admin\SupportTicketAdminController::class, 'attachment'])->whereNumber('messageId')->name('subadmin.support_tickets.attachment');
+    Route::post('support-tickets/{id}/desk-sync', [Controllers\Admin\SupportTicketAdminController::class, 'deskSync'])->whereNumber('id')->name('subadmin.support_tickets.desk_sync');
+
     // Bulk Registration
     Route::get('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'index'])->name('subadmin.bulk_registration.index');
     Route::post('/bulk-registration', [Controllers\SubAdmin\SubAdminBulkRegistrationController::class, 'store'])->name('subadmin.bulk_registration.store');
@@ -1805,6 +1837,15 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
     Route::put('/vendors/{id?}', [Controllers\SubAdmin\SubAdminVendorController::class, 'update'])->name('subadmin.vendors.update');
     Route::delete('/vendors/{id?}', [Controllers\SubAdmin\SubAdminVendorController::class, 'destroy'])->name('subadmin.vendors.destroy');
     Route::get('/vendors/{vendor}/price-change-requests', [Controllers\SubAdmin\SubAdminVendorController::class, 'priceChangeRequests'])->name('subadmin.vendors.price_change_requests');
+    Route::post('/vendors/price-change-requests/{price_change_request}/approve', [Controllers\SubAdmin\SubAdminVendorController::class, 'approvePriceChangeRequest'])->name('subadmin.vendors.price_change_approve');
+    Route::post('/vendors/price-change-requests/{price_change_request}/reject', [Controllers\SubAdmin\SubAdminVendorController::class, 'rejectPriceChangeRequest'])->name('subadmin.vendors.price_change_reject');
+    Route::get('/vendors/{vendor}/leegality/preview-agreement', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'previewAgreement'])->name('subadmin.vendors.leegality_preview_agreement');
+    Route::post('/vendors/{vendor}/leegality/send', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'send'])->name('subadmin.vendors.leegality_send');
+    Route::post('/vendors/{vendor}/leegality/refresh', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'refresh'])->name('subadmin.vendors.leegality_refresh');
+    Route::post('/vendors/{vendor}/leegality/add-my-signature', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'addMySignature'])->name('subadmin.vendors.leegality_add_my_signature');
+    Route::get('/vendors/{vendor}/leegality/{signature}/view-signed', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'viewSigned'])->name('subadmin.vendors.leegality_view_signed');
+    Route::get('/vendors/{vendor}/leegality/{signature}/download-signed', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'downloadSigned'])->name('subadmin.vendors.leegality_download_signed');
+    Route::get('/vendors/{vendor}/leegality/{signature}/download-audit', [Controllers\SubAdmin\SubAdminVendorLeegalitySignatureController::class, 'downloadAudit'])->name('subadmin.vendors.leegality_download_audit');
 
     // Location Attendance
     Route::get('/location-attendance', [Controllers\SubAdmin\SubAdminController::class, 'locationAttendance'])->name('subadmin.location_attendance.index');
@@ -1844,12 +1885,36 @@ Route::prefix('/subadmin')->middleware(['auth', 'role:Sub Admin'])->group(functi
     Route::put('/doctor-requests/{doctor_request}/registration-profile', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updateRegistrationProfile'])->name('subadmin.doctor_requests.registration_profile_update');
     Route::post('/doctor-requests/{doctor_request}/generate-about', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'generateRegistrationAbout'])->name('subadmin.doctor_requests.generate_about');
     Route::post('/doctor-requests/{doctor_request}/profile-image/generate-coat', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'generateProfileImageCoat'])->name('subadmin.doctor_requests.profile_image_generate');
-    
+    Route::post('/doctor-requests/{doctor_request}/profile-image/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approveProfileImage'])->name('subadmin.doctor_requests.profile_image_approve');
+    Route::get('/doctor-requests/{doctor_request}/website-reviews/panel', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsPanel'])->name('subadmin.doctor_requests.website_reviews_panel');
+    Route::post('/doctor-requests/{doctor_request}/website-reviews', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsStore'])->name('subadmin.doctor_requests.website_reviews_store');
+    Route::delete('/doctor-requests/{doctor_request}/website-reviews/{review}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'websiteReviewsDestroy'])->name('subadmin.doctor_requests.website_reviews_destroy');
+    Route::post('/doctor-requests/price-change-requests/{price_change_request}/approve', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'approvePriceChangeRequest'])->name('subadmin.doctor_requests.price_change_approve');
+    Route::post('/doctor-requests/price-change-requests/{price_change_request}/reject', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'rejectPriceChangeRequest'])->name('subadmin.doctor_requests.price_change_reject');
+    Route::post('/doctor-requests/regenerate-online-meetings', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'regenerateOnlineMeetingLinks'])->name('subadmin.doctor_requests.regenerate_online_meetings');
+    Route::post('/doctor-requests/portal-lead-commission', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePortalLeadCommission'])->name('subadmin.doctor_requests.portal_lead_commission');
+    Route::get('/doctor-requests/{doctor_request}', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'show'])->name('subadmin.doctor_requests.show');
+    Route::get('/doctor-requests/{doctor_request}/pricing-edit', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingEdit'])->name('subadmin.doctor_requests.pricing_edit');
+    Route::put('/doctor-requests/{doctor_request}/pricing', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updatePricing'])->name('subadmin.doctor_requests.pricing_update');
+    Route::get('/doctor-requests/{doctor_request}/price-change-requests', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'priceChangeRequests'])->name('subadmin.doctor_requests.price_change_requests');
+    Route::get('/doctor-requests/{doctor_request}/pricing-logs', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'pricingLogs'])->name('subadmin.doctor_requests.pricing_logs');
+    Route::post('/doctor-requests/{doctor_request}/status', [Controllers\SubAdmin\SubAdminDoctorRequestAdminController::class, 'updateStatus'])->name('subadmin.doctor_requests.update_status');
+    Route::post('doctor-referral-users', [Controllers\SubAdmin\SubAdminDoctorReferralUserController::class, 'store'])->name('subadmin.doctor_referral_users.store');
+    Route::delete('doctor-referral-users/{doctorReferralUser}', [Controllers\SubAdmin\SubAdminDoctorReferralUserController::class, 'destroy'])->name('subadmin.doctor_referral_users.destroy');
+    Route::get('/doctor-requests/{doctor_request}/leegality/preview-agreement', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'previewAgreement'])->name('subadmin.doctor_requests.leegality_preview_agreement');
+    Route::post('/doctor-requests/{doctor_request}/leegality/send', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'send'])->name('subadmin.doctor_requests.leegality_send');
+    Route::post('/doctor-requests/{doctor_request}/leegality/refresh', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'refresh'])->name('subadmin.doctor_requests.leegality_refresh');
+    Route::post('/doctor-requests/{doctor_request}/leegality/add-my-signature', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'addMySignature'])->name('subadmin.doctor_requests.leegality_add_my_signature');
+    Route::get('/doctor-requests/{doctor_request}/leegality/{signature}/view-signed', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'viewSigned'])->name('subadmin.doctor_requests.leegality_view_signed');
+    Route::get('/doctor-requests/{doctor_request}/leegality/{signature}/download-signed', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'downloadSigned'])->name('subadmin.doctor_requests.leegality_download_signed');
+    Route::get('/doctor-requests/{doctor_request}/leegality/{signature}/download-audit', [Controllers\SubAdmin\SubAdminDoctorLeegalitySignatureController::class, 'downloadAudit'])->name('subadmin.doctor_requests.leegality_download_audit');
+
+    Route::get('/doctor-consultation-services/create', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'create'])->name('subadmin.doctor_consultation_services.create');
+    Route::post('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'store'])->name('subadmin.doctor_consultation_services.store');
     Route::get('/doctor-consultation-services', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'index'])->name('subadmin.doctor_consultation_services.index');
-    Route::get('/doctor-consultation-services/data', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'data'])->name('subadmin.doctor_consultation_services.data');
-    Route::get('/doctor-consultation-services/{service}/view-modal', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'viewModal'])->name('subadmin.doctor_consultation_services.view_modal');
-    Route::put('/doctor-consultation-services/{service}/approve', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'approve'])->name('subadmin.doctor_consultation_services.approve');
-    Route::put('/doctor-consultation-services/{service}/reject', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'reject'])->name('subadmin.doctor_consultation_services.reject');
+    Route::get('/doctor-consultation-services/{doctor_consultation_service}/edit', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'edit'])->name('subadmin.doctor_consultation_services.edit');
+    Route::put('/doctor-consultation-services/{doctor_consultation_service}', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'update'])->name('subadmin.doctor_consultation_services.update');
+    Route::delete('/doctor-consultation-services/{doctor_consultation_service}', [Controllers\SubAdmin\SubAdminDoctorConsultationServiceController::class, 'destroy'])->name('subadmin.doctor_consultation_services.destroy');
 
     // Whatsapp
     Route::get('all-whatsapp-chats', [Controllers\WhatsappMsgController::class, 'all_whatsapp_chats_index'])->name('subadmin.all_whatsapp_chats.index');

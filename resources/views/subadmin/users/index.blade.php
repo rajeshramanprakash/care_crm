@@ -126,7 +126,7 @@
                         <button class="btn role-filter" data-role="{{ $role->name }}">{{ $role->name }}</button>
                     @endforeach
                     @can('create_user')
-                    <a href="{{ route('subadmin.users.manage') }}" class="btn add-user-btn">
+                    <a href="{{ route('subadmin.users.create') }}" class="btn add-user-btn">
                         <i class="fas fa-user-plus"></i> Add New User
                     </a>
                     @endcan

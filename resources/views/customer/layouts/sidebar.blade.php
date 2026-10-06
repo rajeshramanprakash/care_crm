@@ -5,6 +5,15 @@ $customerType = Session::get('customer_type', 'lead');
 $uri_arr = explode(".", Route::currentRouteName());
 $uri = end($uri_arr);
 $route_name = Route::currentRouteName();
+$customerSupportUnread = 0;
+try {
+    $portalCustomer = \App\Support\CustomerPortal::current();
+    if ($portalCustomer) {
+        $customerSupportUnread = \App\Models\SupportTicket::where('customer_contact_no', $portalCustomer['contact_no'])->where('unread_for_customer', true)->count();
+    }
+} catch (\Throwable $e) {
+    $customerSupportUnread = 0;
+}
 @endphp
 <style>
     .dataTables_scroll, .dataTables_scrollHead, .dataTables_scrollHeadInner, .dataTable{
@@ -84,6 +93,18 @@ $route_name = Route::currentRouteName();
                     <a href="{{ route('customer.payment-details') }}" class="nav-link {{ strpos($route_name, 'payment-details') !== false ? 'active' : '' }}">
                         <i class="nav-icon fas fa-rupee-sign"></i>
                         <p>Payment</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('customer.feedback.index') }}" class="nav-link {{ str_starts_with((string) $route_name, 'customer.feedback') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-star"></i>
+                        <p>Feedback</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('customer.support.index') }}" class="nav-link {{ str_starts_with((string) $route_name, 'customer.support') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-life-ring"></i>
+                        <p>Support @if($customerSupportUnread > 0)<span class="badge badge-danger right">{{ $customerSupportUnread }}</span>@endif</p>
                     </a>
                 </li>
             </ul>

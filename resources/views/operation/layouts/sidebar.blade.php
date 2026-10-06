@@ -116,6 +116,19 @@ $route_name = Route::currentRouteName();
                        <p>Technical Support</p>
                    </a>
                </li>
+                @php $feedbackUnseen = \App\Http\Controllers\Operation\OperationFeedbackController::unseenCountFor(auth()->user(), false); @endphp
+                <li class="nav-item">
+                    <a href="{{ route('operation.customer_feedback.index') }}" class="nav-link {{ request()->routeIs('operation.customer_feedback.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-star"></i>
+                        <p>Customer Feedback @if($feedbackUnseen)<span class="badge bg-danger right">{{ $feedbackUnseen }}</span>@endif</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('speak_up.create', ['as' => 'staff']) }}" class="nav-link {{ str_starts_with((string) Route::currentRouteName(), 'speak_up.') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-bullhorn"></i>
+                        <p>Speak Up</p>
+                    </a>
+                </li>
             </ul>
         </nav>
         <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">

@@ -161,6 +161,10 @@ class UserController extends Controller
 
     public function manage_process(Request $request, $id = null)
     {
+        if ($request->has('location_id_csv')) {
+            $request->merge(['location_id' => array_values(array_filter(explode(',', (string) $request->input('location_id_csv')), 'strlen'))]);
+        }
+
         $validate = Validator::make($request->all(), [
             'f_name' => 'required|string|min:3|max:255',
             'l_name' => 'required|string|min:3|max:255',
@@ -180,7 +184,9 @@ class UserController extends Controller
         }
 
         $roleIds = implode(',', $request->role_id);
-        $locationIds = implode(',', $request->location_id);
+        $locationIds = in_array('all', $request->location_id, true)
+            ? \App\Models\Location::orderBy('id')->pluck('id')->implode(',')
+            : implode(',', $request->location_id);
         $leadTypes = implode(',', $request->lead_type);
         $services = $request->services ? implode(',', $request->services) : null;
 
@@ -203,7 +209,7 @@ class UserController extends Controller
             }
 
             $user->syncRoles(array_map('intval', $request->role_id));
-            $user->syncPermissions($request->permissions ?? []);
+            $user->syncPermissions(\App\Support\SubAdminPermissions::normalize($request->permissions ?? []));
 
             $message = 'User updated successfully!';
         } else {
@@ -224,7 +230,7 @@ class UserController extends Controller
                     'services' => $services,
                 ]);
                 $existing->syncRoles(array_map('intval', $request->role_id));
-                $existing->syncPermissions($request->permissions ?? []);
+                $existing->syncPermissions(\App\Support\SubAdminPermissions::normalize($request->permissions ?? []));
                 $user = $existing;
                 $message = 'User restored and updated successfully!';
             } else {
@@ -241,7 +247,7 @@ class UserController extends Controller
                     'services' => $services,
                 ]);
                 $user->syncRoles(array_map('intval', $request->role_id));
-                $user->syncPermissions($request->permissions ?? []);
+                $user->syncPermissions(\App\Support\SubAdminPermissions::normalize($request->permissions ?? []));
                 $message = 'User created successfully!';
             }
         }

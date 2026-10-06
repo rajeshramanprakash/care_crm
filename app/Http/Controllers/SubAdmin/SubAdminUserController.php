@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\TataService;
+use App\Support\SubAdminPermissions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -17,12 +18,32 @@ class SubAdminUserController extends Controller
     public function __construct()
     {
         $this->middleware('can:view_user')->only(['index', 'getUsers', 'show', 'getRoles', 'getLocations', 'getParentUsers', 'getLeadTypes']);
-        $this->middleware('can:create_user')->only(['store', 'manage', 'manage_process']);
-        // For edit, it usually shares manage/manage_process, so we should allow if they have create OR edit.
-        // Actually, Spatie's middleware `can:` only takes one permission, or multiple with pipe `|`?
-        // It's safer to just require `view_user` for `manage` if it's both create and edit, but since Spatie permission allows multiple we could use `permission:create_user|edit_user`.
-        // Let's use `can:delete_user` for destroy
+        $this->middleware('can:create_user')->only(['create', 'store']);
+        $this->middleware('can:edit_user')->only(['edit', 'update', 'manage']);
         $this->middleware('can:delete_user')->only(['destroy']);
+    }
+
+    /**
+     * Sub Admins manage staff users only: Admin / Sub Admin accounts and permissions stay with Admin.
+     */
+    private function abortIfProtected(?User $target): void
+    {
+        abort_if(SubAdminPermissions::userHasProtectedRole($target), 403, 'Admin / Sub Admin users ko sirf Admin manage kar sakta hai.');
+    }
+
+    private function assignableRoles()
+    {
+        return Role::select('id', 'name')->whereNotIn('id', SubAdminPermissions::PROTECTED_ROLE_IDS)->get();
+    }
+
+    public function create()
+    {
+        return $this->manage();
+    }
+
+    public function edit($id)
+    {
+        return $this->manage($id);
     }
 
     public function index()
@@ -87,6 +108,7 @@ class SubAdminUserController extends Controller
             'users.email',
             'users.mobile',
             'users.created_at',
+            'users.role_id',
             DB::raw('(SELECT GROUP_CONCAT(name SEPARATOR ", ") FROM locations WHERE FIND_IN_SET(locations.id, users.location_id)) AS location_name'),
             DB::raw('(SELECT GROUP_CONCAT(name SEPARATOR ", ") FROM roles WHERE FIND_IN_SET(roles.id, users.role_id)) AS roles'),
             DB::raw('(SELECT CONCAT(f_name, " ", l_name) FROM users AS parent WHERE parent.id = users.parent_id) AS parent_name'),
@@ -108,10 +130,23 @@ class SubAdminUserController extends Controller
             $users = $users->whereRaw('(SELECT COUNT(*) FROM roles WHERE FIND_IN_SET(roles.id, users.role_id) AND roles.name = ?) > 0', [$request->role]);
         }
 
+        $canEdit = auth()->user()->can('edit_user');
+        $canDelete = auth()->user()->can('delete_user');
+
         return datatables()->of($users)
-            ->addColumn('action', function ($user) {
-                return '<a href="' . route('subadmin.users.manage', $user->id) . '" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="javascript:void(0);" data-id="' . $user->id . '" class="btn btn-sm btn-danger delete-btn">Delete</a>';
+            ->addColumn('action', function ($user) use ($canEdit, $canDelete) {
+                if (SubAdminPermissions::containsProtectedRole(explode(',', (string) $user->getRawOriginal('role_id')))) {
+                    return '<span class="text-muted">Admin only</span>';
+                }
+                $html = '';
+                if ($canEdit) {
+                    $html .= '<a href="' . route('subadmin.users.manage', $user->id) . '" class="btn btn-sm btn-primary">Edit</a> ';
+                }
+                if ($canDelete) {
+                    $html .= '<a href="javascript:void(0);" data-id="' . $user->id . '" class="btn btn-sm btn-danger delete-btn">Delete</a>';
+                }
+
+                return $html ?: '<span class="text-muted">-</span>';
             })
             ->addColumn('roles', function ($user) {
                 return $user->roles ?: '<span class="text-muted">No roles</span>';
@@ -139,17 +174,18 @@ class SubAdminUserController extends Controller
 
     public function manage($id = null)
     {
-        $roles = Role::select('id', 'name')->get();
+        $roles = $this->assignableRoles();
         $locations = \App\Models\Location::all();
         $parentUsers = User::whereRaw('FIND_IN_SET(role_id, "3,5")')->get();
         $lead_types = ['web', 'ivr', 'whatsapp'];
         $services = \App\Models\Service::all();
-        $permissions = \Spatie\Permission\Models\Permission::all();
+        $permissions = collect();
 
         $user = null;
 
         if ($id) {
             $user = User::findOrFail($id);
+            $this->abortIfProtected($user);
             $user->role_id = explode(',', $user->role_id);
             $user->location_id = explode(',', $user->location_id);
             $user->lead_type = isset($user->lead_type) ? explode(',', $user->lead_type) : [];
@@ -161,6 +197,10 @@ class SubAdminUserController extends Controller
 
     public function manage_process(Request $request, $id = null)
     {
+        if ($request->has('location_id_csv')) {
+            $request->merge(['location_id' => array_values(array_filter(explode(',', (string) $request->input('location_id_csv')), 'strlen'))]);
+        }
+
         $validate = Validator::make($request->all(), [
             'f_name' => 'required|string|min:3|max:255',
             'l_name' => 'required|string|min:3|max:255',
@@ -172,15 +212,28 @@ class SubAdminUserController extends Controller
             'parent_id' => 'nullable|exists:users,id',
             'password' => $id ? 'nullable|min:6' : 'required|min:6',
             'services' => 'nullable|array',
-            'permissions' => 'nullable|array',
         ]);
+
+        $validate->after(function ($validator) use ($request) {
+            if (SubAdminPermissions::containsProtectedRole((array) $request->role_id)) {
+                $validator->errors()->add('role_id', 'Admin / Sub Admin role sirf Admin de sakta hai.');
+            }
+        });
 
         if ($validate->fails()) {
             return redirect()->back()->withErrors($validate)->withInput();
         }
 
+        if ($id) {
+            $this->abortIfProtected(User::find($id));
+        } else {
+            $this->abortIfProtected(User::withTrashed()->where('email', $request->email)->first());
+        }
+
         $roleIds = implode(',', $request->role_id);
-        $locationIds = implode(',', $request->location_id);
+        $locationIds = in_array('all', $request->location_id, true)
+            ? \App\Models\Location::orderBy('id')->pluck('id')->implode(',')
+            : implode(',', $request->location_id);
         $leadTypes = implode(',', $request->lead_type);
         $services = $request->services ? implode(',', $request->services) : null;
 
@@ -203,7 +256,6 @@ class SubAdminUserController extends Controller
             }
 
             $user->syncRoles(array_map('intval', $request->role_id));
-            $user->syncPermissions($request->permissions ?? []);
 
             $message = 'User updated successfully!';
         } else {
@@ -224,7 +276,6 @@ class SubAdminUserController extends Controller
                     'services' => $services,
                 ]);
                 $existing->syncRoles(array_map('intval', $request->role_id));
-                $existing->syncPermissions($request->permissions ?? []);
                 $user = $existing;
                 $message = 'User restored and updated successfully!';
             } else {
@@ -241,7 +292,6 @@ class SubAdminUserController extends Controller
                     'services' => $services,
                 ]);
                 $user->syncRoles(array_map('intval', $request->role_id));
-                $user->syncPermissions($request->permissions ?? []);
                 $message = 'User created successfully!';
             }
         }
@@ -254,7 +304,8 @@ class SubAdminUserController extends Controller
 
     public function destroy($id)
     {
-        $user = User::find($id);
+        $user = User::findOrFail($id);
+        $this->abortIfProtected($user);
         $user->delete();
 
         return response()->json(['status' => 'success', 'message' => 'User deleted successfully!']);
@@ -263,8 +314,7 @@ class SubAdminUserController extends Controller
     // API Methods for Mobile App
     public function getRoles()
     {
-        $roles = Role::select('id', 'name')->get();
-        return response()->json($roles);
+        return response()->json($this->assignableRoles());
     }
 
     public function getLocations()
@@ -324,12 +374,19 @@ class SubAdminUserController extends Controller
             'services' => 'nullable|string',
         ]);
 
+        $validate->after(function ($validator) use ($request) {
+            if (SubAdminPermissions::containsProtectedRole(explode(',', (string) $request->role_id))) {
+                $validator->errors()->add('role_id', 'Admin / Sub Admin role sirf Admin de sakta hai.');
+            }
+        });
+
         if ($validate->fails()) {
             return response()->json(['errors' => $validate->errors()], 422);
         }
 
         // Check for soft-deleted user with same email
         $existing = User::withTrashed()->where('email', $request->email)->first();
+        $this->abortIfProtected($existing);
         if ($existing && $existing->trashed()) {
             // Restore and update the user
             $existing->restore();
@@ -394,12 +451,13 @@ class SubAdminUserController extends Controller
             return response()->json($user);
         }
 
-        return view('subadmin.users.show', compact('user'));
+        return redirect()->route('subadmin.users.index');
     }
 
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $this->abortIfProtected($user);
 
         $validate = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'f_name' => 'required|string|min:3|max:255',
@@ -413,6 +471,12 @@ class SubAdminUserController extends Controller
             'password' => 'nullable|min:6',
             'services' => 'nullable|string',
         ]);
+
+        $validate->after(function ($validator) use ($request) {
+            if (SubAdminPermissions::containsProtectedRole(explode(',', (string) $request->role_id))) {
+                $validator->errors()->add('role_id', 'Admin / Sub Admin role sirf Admin de sakta hai.');
+            }
+        });
 
         if ($validate->fails()) {
             return response()->json(['errors' => $validate->errors()], 422);

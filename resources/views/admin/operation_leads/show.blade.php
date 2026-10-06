@@ -90,6 +90,7 @@
                 </div>
                 <div class="card-body">
                     <div class="container-fluid">
+                        @include('lead_ai._panel', ['aiType' => 'operation', 'aiLeadId' => $lead->id])
                         <div class="card mb-5">
                             <div class="card-header text-light bg-orange" style="">
                                 <h3 class="card-title text-light">Lead Information</h3>

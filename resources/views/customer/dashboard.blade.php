@@ -378,6 +378,7 @@
         </div>
     </section>
 </div>
+@include('customer.feedback._prompt')
 
 @push('scripts')
 <script>

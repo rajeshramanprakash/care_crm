@@ -26,9 +26,8 @@ class SubAdminSeeder extends Seeder
             $role = Role::find(7);
         }
 
-        // Ensure all permissions exist (run PermissionSeeder if needed)
-        // Assign all permissions to Sub Admin
-        $role->syncPermissions(Permission::all());
+        // Sub Admin permissions are granted per user from Admin > Users, never on the role.
+        $role->syncPermissions([]);
 
         // Create a default Sub Admin User
         $user = User::firstOrCreate(

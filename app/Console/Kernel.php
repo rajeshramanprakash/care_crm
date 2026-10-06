@@ -31,6 +31,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('pricing:revert-temporary')
             ->everyMinute()
             ->timezone('Asia/Kolkata');
+
+        $schedule->command('desk:sync')
+            ->everyTenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        $schedule->command('leads:ai-analyze')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping(60)
+            ->runInBackground();
     }
 
     /**

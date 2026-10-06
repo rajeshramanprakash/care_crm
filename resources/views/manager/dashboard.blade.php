@@ -1365,6 +1365,8 @@
                 </button>
             </div>
             <div class="modal-body">
+                @include('lead_ai._widget')
+                <div id="viewLeadAiSlot" style="display:none;"></div>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="mb-3 p-3 bg-light rounded">
@@ -2632,6 +2634,7 @@
             // Show loading state
             const modal = new bootstrap.Modal(document.getElementById('viewLeadModal'));
             modal.show();
+            if (window.LeadAiPanel) window.LeadAiPanel.mount(document.getElementById('viewLeadAiSlot'), 'sales', leadId);
 
             // Fetch lead data using the correct route
             fetch(`{{ route('manager.dashboard.lead-details', '') }}/${leadId}`)

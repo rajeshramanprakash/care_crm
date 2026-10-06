@@ -2260,6 +2260,8 @@
                 <button class="modal-close" onclick="closeModal('leadDetailsModal')">&times;</button>
             </div>
             <div class="modal-body">
+                @include('lead_ai._widget')
+                <div id="leadDetailsAiSlot" style="display:none;"></div>
                 <div id="leadDetailsContent">
                     <div style="text-align: center; padding: 40px;">
                         <div class="loading-spinner-modal"></div>
@@ -4665,6 +4667,8 @@
             if (content) {
                 content.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading-spinner-modal"></div><p style="margin-top: 16px; color: #6B7280;">Loading lead details...</p></div>';
             }
+
+            if (window.LeadAiPanel) window.LeadAiPanel.mount(document.getElementById('leadDetailsAiSlot'), leadType === 'sales' ? 'sales' : 'operation', leadId);
 
             // Determine the correct URL based on lead type
             const url = leadType === 'sales' ? `/admin/leads/${leadId}` : `/admin/operation-leads/${leadId}`;
