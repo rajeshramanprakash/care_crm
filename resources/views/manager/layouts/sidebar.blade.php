@@ -73,12 +73,6 @@ $route_name = Route::currentRouteName();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('manager.ai_insights.index') }}" class="nav-link {{ str_starts_with($route_name, 'manager.ai_insights.') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-robot"></i>
-                        <p>AI Lead Insights</p>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="{{route('manager.referral_leads.index')}}" class="nav-link {{ strpos($route_name, 'referral_leads') !== false ? 'active' : '' }}">
                         <i class="nav-icon fas fa-share-square"></i>
                         <p>Referral Leads</p>

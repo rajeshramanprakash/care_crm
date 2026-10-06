@@ -35,6 +35,12 @@ class LeadAiAccess
         };
     }
 
+    /** Only Admin may start a review by hand; managers see the automatic reviews. */
+    public static function canReanalyze(): bool
+    {
+        return self::role() === self::ADMIN;
+    }
+
     public static function canView(?User $user, string $type, int $leadId): bool
     {
         if (! $user || ! in_array($type, self::types(), true)) {

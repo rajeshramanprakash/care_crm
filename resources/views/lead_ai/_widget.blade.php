@@ -20,6 +20,7 @@
 <script>
 window.LeadAiPanel = window.LeadAiPanel || (function () {
     var types = @json($aiWidgetTypes);
+    var canReanalyze = @json(\App\Support\LeadAi\LeadAiAccess::canReanalyze());
     var urls = {
         status: @json(route($aiWidgetPrefix . '.ai_insights.status', [$aiWidgetTypes[0], 0])),
         analyze: @json(route($aiWidgetPrefix . '.ai_insights.analyze', [$aiWidgetTypes[0], 0]))
@@ -46,7 +47,7 @@ window.LeadAiPanel = window.LeadAiPanel || (function () {
             '<div class="card mb-3 lead-ai-card">' +
               '<div class="lead-ai-head"><strong><i class="fas fa-robot"></i> AI Lead Review</strong>' +
                 '<span style="display:flex;align-items:center;gap:8px;"><small style="opacity:.85;">Only managers &amp; Admin can see this</small>' +
-                '<button type="button" class="btn btn-sm btn-light lead-ai-run"><i class="fas fa-magic"></i> <span>Analyze with AI</span></button></span>' +
+                (canReanalyze ? '<button type="button" class="btn btn-sm btn-light lead-ai-run"><i class="fas fa-magic"></i> <span>Analyze with AI</span></button>' : '') + '</span>' +
               '</div>' +
               '<div class="card-body lead-ai-body"><div class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading AI review…</div></div>' +
             '</div>';
@@ -55,6 +56,7 @@ window.LeadAiPanel = window.LeadAiPanel || (function () {
         var hasResult = false;
 
         function setRunning(running) {
+            if (!btn) return;
             btn.disabled = running;
             btn.querySelector('span').textContent = running ? 'Analyzing…' : (hasResult ? 'Re-analyze' : 'Analyze with AI');
         }
@@ -89,7 +91,7 @@ window.LeadAiPanel = window.LeadAiPanel || (function () {
                 });
         }
 
-        btn.addEventListener('click', function () {
+        if (btn) btn.addEventListener('click', function () {
             setRunning(true);
             fetch(url('analyze', type, id), {
                 method: 'POST',

@@ -136,12 +136,6 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('operation-manager.ai_insights.index') }}" class="nav-link {{ request()->routeIs('operation-manager.ai_insights.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-robot"></i>
-                        <p>AI Lead Insights</p>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="{{ route('speak_up.create', ['as' => 'staff']) }}" class="nav-link {{ str_starts_with((string) Route::currentRouteName(), 'speak_up.') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-bullhorn"></i>
                         <p>Speak Up</p>

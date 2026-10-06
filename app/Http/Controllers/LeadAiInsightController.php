@@ -19,8 +19,8 @@ class LeadAiInsightController extends Controller
 {
     public function index(Request $request)
     {
+        abort_unless(LeadAiAccess::role() === LeadAiAccess::ADMIN, 403);
         $types = LeadAiAccess::types();
-        abort_if($types === [], 403);
         $type = in_array($request->query('type'), $types, true) ? $request->query('type') : $types[0];
         $user = $request->user();
 
@@ -73,6 +73,9 @@ class LeadAiInsightController extends Controller
     public function analyze(Request $request, string $type, int $id)
     {
         $this->authorizeLead($request, $type, $id);
+        if (! LeadAiAccess::canReanalyze()) {
+            return response()->json(['ok' => false, 'message' => 'Only Admin can re-analyze a lead.'], 403);
+        }
         if (! LeadAnalyzer::configured()) {
             return response()->json(['ok' => false, 'message' => 'AI is not configured on this server (GEMINI_API_KEY missing).'], 422);
         }
@@ -88,15 +91,11 @@ class LeadAiInsightController extends Controller
 
     public function show(Request $request, string $type, int $id)
     {
+        abort_unless(LeadAiAccess::role() === LeadAiAccess::ADMIN, 403);
         $this->authorizeLead($request, $type, $id);
         $lead = $type === 'operation' ? OperationLead::withTrashed()->findOrFail($id) : Lead::findOrFail($id);
         $rp = LeadAiAccess::routePrefix();
-        $leadUrl = match (true) {
-            $type === 'operation' && $rp === 'admin' => route('admin.operation_leads.show', $id),
-            $type === 'operation' => route('operation-manager.operation_leads.show', $id),
-            $rp === 'admin' => route('admin.leads.show', $id),
-            default => route('manager.leads.show', $id),
-        };
+        $leadUrl = $type === 'operation' ? route('admin.operation_leads.show', $id) : route('admin.leads.show', $id);
 
         return view('lead_ai.show', [
             'layout' => LeadAiAccess::layout(),

@@ -1293,8 +1293,6 @@ Route::prefix('/manager')->middleware(['auth', 'role:Sales Manager'])->group(fun
     Route::get('/leads/{id}/edit', [App\Http\Controllers\Manager\LeadController::class, 'edit'])->name('manager.leads.edit');
     Route::put('/leads/{id}', [App\Http\Controllers\Manager\LeadController::class, 'update'])->name('manager.leads.update');
     Route::post('/leads/{id}/status-remark/generate-ai', [App\Http\Controllers\LeadStatusRemarkAiController::class, 'generateForManager'])->name('manager.leads.status-remark.generate-ai');
-    Route::get('/ai-insights', [App\Http\Controllers\LeadAiInsightController::class, 'index'])->name('manager.ai_insights.index');
-    Route::get('/ai-insights/{type}/{id}', [App\Http\Controllers\LeadAiInsightController::class, 'show'])->whereIn('type', ['sales'])->whereNumber('id')->name('manager.ai_insights.show');
     Route::get('/ai-insights/{type}/{id}/status', [App\Http\Controllers\LeadAiInsightController::class, 'status'])->whereIn('type', ['sales'])->whereNumber('id')->name('manager.ai_insights.status');
     Route::post('/ai-insights/{type}/{id}/analyze', [App\Http\Controllers\LeadAiInsightController::class, 'analyze'])->whereIn('type', ['sales'])->whereNumber('id')->middleware('throttle:20,1')->name('manager.ai_insights.analyze');
     Route::get('/leads/executives', [App\Http\Controllers\Manager\LeadController::class, 'getExecutives'])->name('manager.leads.getExecutives');
@@ -1607,8 +1605,6 @@ Route::middleware(['auth', 'role:Operation Manager'])->prefix('operation-manager
 
     Route::get('/customer-feedback', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'index'])->name('customer_feedback.index');
     Route::get('/customer-feedback/{id}', [App\Http\Controllers\Operation\OperationFeedbackController::class, 'show'])->whereNumber('id')->name('customer_feedback.show');
-    Route::get('/ai-insights', [App\Http\Controllers\LeadAiInsightController::class, 'index'])->name('ai_insights.index');
-    Route::get('/ai-insights/{type}/{id}', [App\Http\Controllers\LeadAiInsightController::class, 'show'])->whereIn('type', ['operation'])->whereNumber('id')->name('ai_insights.show');
     Route::get('/ai-insights/{type}/{id}/status', [App\Http\Controllers\LeadAiInsightController::class, 'status'])->whereIn('type', ['operation'])->whereNumber('id')->name('ai_insights.status');
     Route::post('/ai-insights/{type}/{id}/analyze', [App\Http\Controllers\LeadAiInsightController::class, 'analyze'])->whereIn('type', ['operation'])->whereNumber('id')->middleware('throttle:20,1')->name('ai_insights.analyze');
 

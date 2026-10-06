@@ -19,7 +19,7 @@
     @elseif ($analysis && $analysis->status === 'failed')
         <div class="alert alert-danger mb-0"><strong>AI analysis failed.</strong> {{ $analysis->error }}</div>
     @else
-        <div class="text-muted">No AI review yet. Click <strong>Analyze with AI</strong> — it reads every call (answered / missed), call recordings, WhatsApp chat and remarks of this lead and tells what went right, what went wrong and how to do better.</div>
+        <div class="text-muted">No AI review yet. {!! \App\Support\LeadAi\LeadAiAccess::canReanalyze() ? 'Click <strong>Analyze with AI</strong>, or it runs automatically on the next call, chat or update' : 'It runs automatically on the next call, chat or update of this lead' !!} — it reads every call (answered / missed), call recordings, WhatsApp chat and remarks of this lead and tells what went right, what went wrong and how to do better.</div>
     @endif
 @else
     <div data-ai-has-result="1">
